@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Caixa (PDV) - Logaritmo</title><link rel="stylesheet" href="{% static 'style.css' %}"></head>
+<body>
+    <nav class="sidebar">
+        <h2>Logaritmo</h2>
+        <ul><li><a href="#" class="active">PDV Ativo</a></li><li><a href="caixa_relatorio.html">Relatório de Vendas</a></li></ul>
+        <div style="margin-top: auto;"><a href="index.html" class="btn btn-warning btn-block" style="text-align: center;">Fechar Caixa (Sair)</a></div>
+    </nav>
+    <main class="main-content">
+        <header class="header">
+            <div>
+                <h1>Ponto de Venda (PDV)</h1>
+                <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario }}</strong></p>
+            </div>
+        </header>
+        <div class="grid-2">
+            <section class="card">
+                <h2>Bipar Itens ou Pedido</h2>
+                <div class="form-group"><input type="text" placeholder="Aguardando leitor de código de barras..." autofocus style="font-size: 1.2rem; padding: 15px; border-color: var(--secondary-blue);"></div>
+                <div style="margin-top: 30px;">
+                    <h3 style="color: var(--text-light); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 15px;">Último Item Lido</h3>
+                    <div style="background: var(--bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 1.2rem; font-weight: 600; color: var(--text-light);">---</span><span style="font-size: 1.5rem; color: var(--text-light); font-weight: bold;">R$ 0,00</span></div>
+                </div>
+            </section>
+            <section class="card" style="background-color: var(--bg-color);">
+                <h2>Resumo e Pagamento</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 1px solid var(--border-color);"><p style="color: var(--text-light); margin-bottom: 5px;">Total da Compra</p><div style="font-size: 3rem; font-weight: bold; color: var(--primary-blue);">R$ 0,00</div></div>
+                <div class="form-group"><label>Forma de Pagamento</label><select style="font-size: 1.1rem; padding: 12px;"><option>Selecione...</option><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>PIX</option></select></div>
+                <div class="form-group"><label>Valor Recebido (Para cálculo de troco)</label><input type="number" placeholder="R$ 0,00" style="font-size: 1.1rem; padding: 12px;"></div>
+                <button class="btn btn-warning btn-block" style="font-size: 1.2rem; padding: 18px; margin-top: 30px;">Confirmar Pagamento e Emitir Cupom</button>
+            </section>
+        </div>
+    </main>
+</body>
+</html>
