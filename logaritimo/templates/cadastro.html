@@ -6,18 +6,50 @@
     <div class="login-container" style="max-width: 500px;">
         <h1>Criar Conta</h1>
         <p>Cadastre um novo funcionário no sistema Logaritmo</p>
-        <form action="index.html" method="GET">
+        
+        <form action="{% url 'usuarios:cadastro' %}" method="POST">
             {% csrf_token %}
-            <div class="form-group"><label>Nome Completo</label><input type="text" required></div>
-            <div class="grid-2">
-                <div class="form-group"><label>Idade</label><input type="number" min="16" required></div>
-                <div class="form-group"><label>Cargo / Setor</label><select required><option value="">Selecione...</option><option value="admin">Administrativo</option><option value="estoque">Estoque</option><option value="vendas">Vendedor</option><option value="caixa">Caixa (PDV)</option><option value="compras">Compras</option></select></div>
+            
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" name="nome_completo" required>
             </div>
-            <div class="form-group"><label>E-mail</label><input type="email" required></div>
-            <div class="form-group"><label>Senha</label><input type="password" required></div>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Idade</label>
+                    <input type="number" name="idade" min="16" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Cargo / Setor</label>
+                    <select name="cargo" required>
+                        <option value="">Selecione...</option>
+                        <option value="admin">Administrativo</option>
+                        <option value="estoque">Estoque</option>
+                        <option value="vendas">Vendedor</option>
+                        <option value="caixa">Caixa (PDV)</option>
+                        <option value="compras">Compras</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" name="senha" required>
+            </div>
+            
             <button type="submit" class="btn btn-primary btn-block" style="margin-top: 20px;">Finalizar Cadastro</button>
         </form>
-        <div style="margin-top: 20px;"><a href="index.html" style="color: var(--secondary-blue); text-decoration: none; font-size: 0.95rem; font-weight: 500;">Já possui conta? Faça Login</a></div>
+        
+        <div style="margin-top: 20px;">
+            <a href="{% url 'usuarios:login' %}" style="color: var(--secondary-blue); text-decoration: none; font-size: 0.95rem; font-weight: 500;">Já possui conta? Faça Login</a>
+        </div>
     </div>
 </body>
 </html>

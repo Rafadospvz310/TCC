@@ -1,24 +1,30 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Painel Admin - Logaritmo Ferragens</title><link rel="stylesheet" href="{% static 'style.css' %}"></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Admin - Logaritmo Ferragens</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
 <body>
     <nav class="sidebar">
         <h2>Logaritmo</h2>
         <ul>
-            <li><a href="#" class="active">Painel Inicial</a></li>
-            <li><a href="/estoque/">Estoque</a></li>
-            <li><a href="/vendas/">Vendedores</a></li>
-            <li><a href="vendas_caixa.html">Caixa (PDV)</a></li>
-            <li><a href="/compras/">Compras / Fornecedores</a></li>
+            <li><a href="{% url 'usuarios:dashboard' %}" class="active">Painel Inicial</a></li>
+            <li><a href="{% url 'estoque:controle' %}">Estoque</a></li>
+            <li><a href="{% url 'vendas:nova' %}">Vendedores</a></li>
+            <li><a href="{% url 'vendas:caixa' %}">Caixa (PDV)</a></li>
+            <li><a href="{% url 'compras:painel' %}">Compras / Fornecedores</a></li>
         </ul>
-        <div style="margin-top: auto;"><a href="index.html" class="btn btn-warning btn-block" style="text-align: center;">Sair do Sistema</a></div>
+        <div style="margin-top: auto;">
+            <a href="{% url 'usuarios:login' %}" class="btn btn-warning btn-block" style="text-align: center;">Sair do Sistema</a>
+        </div>
     </nav>
     <main class="main-content">
         <header class="header">
             <div>
                 <h1>Visão Geral - Logaritmo</h1>
-                <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario }}</strong></p>
+                <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario|default:"Admin" }}</strong></p>
             </div>
         </header>
         <section class="card">
@@ -28,10 +34,16 @@
                 <div class="budget-widget" style="border-top-color: #ef4444;"><h3>Total Gasto (Mês)</h3><div class="value" style="color: #ef4444;">R$ 0,00</div></div>
                 <div class="budget-widget" style="border-top-color: #10b981;"><h3>Saldo Disponível</h3><div class="value" style="color: #10b981;">R$ 0,00</div></div>
             </div>
-            <div style="margin-top: 30px; display: flex; gap: 15px; align-items: flex-end; max-width: 400px;">
-                <div class="form-group" style="margin-bottom: 0; flex-grow: 1;"><label>Novo Orçamento Mensal (R$)</label><input type="number"></div>
-                <button class="btn btn-primary">Atualizar</button>
-            </div>
+            
+            
+            <form action="{% url 'usuarios:dashboard' %}" method="POST" style="margin-top: 30px; display: flex; gap: 15px; align-items: flex-end; max-width: 400px;">
+                {% csrf_token %}
+                <div class="form-group" style="margin-bottom: 0; flex-grow: 1;">
+                    <label>Novo Orçamento Mensal (R$)</label>
+                    <input type="number" name="novo_orcamento" step="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Atualizar</button>
+            </form>
         </section>
     </main>
 </body>

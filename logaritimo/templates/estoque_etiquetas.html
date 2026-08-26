@@ -10,46 +10,61 @@
     <nav class="sidebar">
         <h2>Logaritmo</h2>
         <ul>
-            <li><a href="estoque_controle.html">Controle Geral</a></li>
-            <li><a href="estoque_item.html">Consultar Item</a></li>
-            <li><a href="#" class="active">Gerar Etiquetas</a></li>
+            <li><a href="{% url 'estoque:controle' %}">Controle Geral</a></li>
+            <li><a href="{% url 'estoque:item' %}">Consultar Item</a></li>
+            <li><a href="{% url 'estoque:etiquetas' %}" class="active">Gerar Etiquetas</a></li>
         </ul>
-        <div style="margin-top: auto;"><a href="index.html" class="btn btn-warning btn-block" style="text-align: center;">Sair do Sistema</a></div>
+        <div style="margin-top: auto;">
+            <a href="{% url 'usuarios:login' %}" class="btn btn-warning btn-block" style="text-align: center;">Sair do Sistema</a>
+        </div>
     </nav>
     <main class="main-content">
         <header class="header">
             <div>
                 <h1>Impressão de Etiquetas</h1>
-                <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario }}</strong></p>
+                <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario|default:"Usuário" }}</strong></p>
             </div>
         </header>
         <div class="grid-2">
             <section class="card">
                 <h2>Buscar Produto</h2>
-                <div class="form-group">
-                    <label>Código Interno, Código de Barras ou Nome:</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" placeholder="Ex: Parafuso francês..." autofocus>
-                        <button class="btn btn-primary">Buscar</button>
+                <!-- Formulário GET para buscar o produto no banco -->
+                <form action="{% url 'estoque:etiquetas' %}" method="GET">
+                    <div class="form-group">
+                        <label>Código Interno, Código de Barras ou Nome:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" name="busca_etiqueta" placeholder="Ex: Parafuso francês..." autofocus required>
+                            <button type="submit" class="btn btn-primary">Buscar</button>
+                        </div>
                     </div>
-                </div>
+                </form>
                 <div style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; color: var(--text-light);">
                     <p>Faça uma busca para pré-visualizar a etiqueta.</p>
                 </div>
             </section>
+            
             <section class="card">
                 <h2>Pré-visualização da Etiqueta</h2>
                 <div style="border: 2px dashed var(--border-color); padding: 30px; text-align: center; border-radius: 8px; background: white; margin-bottom: 20px;">
-                    <h3 style="font-size: 1.2rem; color: var(--text-main); margin-bottom: 10px;">Nome do Produto (Exemplo)</h3>
+                    <!-- Variáveis preparadas para receber os dados do banco -->
+                    <h3 style="font-size: 1.2rem; color: var(--text-main); margin-bottom: 10px;">{{ produto.nome|default:"Nome do Produto (Exemplo)" }}</h3>
                     <div style="height: 60px; background: repeating-linear-gradient(90deg, #333, #333 3px, transparent 3px, transparent 6px, #333 6px, #333 7px, transparent 7px, transparent 10px); margin: 0 auto 10px auto; width: 80%;"></div>
-                    <p style="font-family: monospace; font-size: 1rem; color: var(--text-light); letter-spacing: 2px;">7891234567890</p>
-                    <h2 style="font-size: 2.2rem; color: var(--primary-blue); margin-top: 15px;">R$ 0,00</h2>
+                    <p style="font-family: monospace; font-size: 1rem; color: var(--text-light); letter-spacing: 2px;">{{ produto.codigo_barras|default:"7891234567890" }}</p>
+                    <h2 style="font-size: 2.2rem; color: var(--primary-blue); margin-top: 15px;">R$ {{ produto.preco|default:"0,00" }}</h2>
                 </div>
-                <div class="form-group">
-                    <label>Quantidade de Etiquetas a Imprimir:</label>
-                    <input type="number" value="1" min="1">
-                </div>
-                <button class="btn btn-success btn-block" style="font-size: 1.1rem; padding: 15px;">Imprimir Etiquetas</button>
+                
+                <!-- Formulário POST seguro para disparar a impressão -->
+                <form action="{% url 'estoque:etiquetas' %}" method="POST">
+                    {% csrf_token %}
+                    <!-- Campo oculto para avisar qual produto deve ser impresso -->
+                    <input type="hidden" name="produto_id" value="{{ produto.id }}">
+                    
+                    <div class="form-group">
+                        <label>Quantidade de Etiquetas a Imprimir:</label>
+                        <input type="number" name="qtd_etiquetas" value="1" min="1">
+                    </div>
+                    <button type="submit" class="btn btn-success btn-block" style="font-size: 1.1rem; padding: 15px;">Imprimir Etiquetas</button>
+                </form>
             </section>
         </div>
     </main>
