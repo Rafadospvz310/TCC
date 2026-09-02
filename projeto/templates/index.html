@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Logaritmo Ferragens</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <h1>Logaritmo Ferragens</h1>
+        <p>Acesse o sistema</p>
+        <form action="{% url 'app:dashboard' %}" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Usuário ou E-mail</label>
+                <input type="text" name="usuario" placeholder="Digite seu usuário" required>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" name="senha" placeholder="Digite sua senha" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">Entrar no Sistema</button>
+        </form>
+        <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <a href="#" style="color: var(--text-light); text-decoration: none; font-size: 0.9rem;">Esqueci minha senha</a>
+            <a href="{% url 'app:cadastro' %}" class="btn btn-warning" style="padding: 8px 16px; font-size: 0.9rem;">Cadastrar-se</a>
+        </div>
+    </div>
+</body>
+</html>

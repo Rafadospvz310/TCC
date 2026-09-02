@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmar Exclusão</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="login-body">
+    <div class="login-container" style="max-width: 400px; text-align: center;">
+        <h2>Confirmar Exclusão</h2>
+        <p>Tem certeza de que deseja excluir o usuário <strong>{{ usuario.nome_completo }}</strong>?</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" style="background-color: red; color: white; padding: 10px 20px; border: none; cursor: pointer;">Sim, Excluir</button>
+            <a href="{% url 'app:listar' %}" style="margin-left: 10px;">Cancelar</a>
+        </form>
+    </div>
+</body>
+</html>

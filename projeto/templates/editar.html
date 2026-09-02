@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Usuário</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="login-body">
+    <div class="login-container" style="max-width: 500px;">
+        <h1>Editar Funcionário</h1>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" name="nome_completo" value="{{ usuario.nome_completo }}" required>
+            </div>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Idade</label>
+                    <input type="number" name="idade" value="{{ usuario.idade }}" min="16" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Cargo / Setor</label>
+                    <select name="cargo" required>
+                        <option value="admin" {% if usuario.cargo == 'admin' %}selected{% endif %}>Administrativo</option>
+                        <option value="estoque" {% if usuario.cargo == 'estoque' %}selected{% endif %}>Estoque</option>
+                        <option value="vendas" {% if usuario.cargo == 'vendas' %}selected{% endif %}>Vendedor</option>
+                        <option value="caixa" {% if usuario.cargo == 'caixa' %}selected{% endif %}>Caixa (PDV)</option>
+                        <option value="compras" {% if usuario.cargo == 'compras' %}selected{% endif %}>Compras</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" name="email" value="{{ usuario.email }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Nova Senha (deixe em branco para não alterar)</label>
+                <input type="password" name="senha">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 20px;">Salvar Alterações</button>
+            <a href="{% url 'app:listar' %}" style="display: block; text-align: center; margin-top: 10px;">Cancelar</a>
+        </form>
+    </div>
+</body>
+</html>

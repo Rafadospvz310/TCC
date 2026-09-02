@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório do Caixa - Logaritmo</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <nav class="sidebar">
+        <h2>Logaritmo</h2>
+        <ul>
+            <li><a href="{% url 'app:caixa' %}">PDV Ativo</a></li>
+            <li><a href="{% url 'app:relatorio' %}" class="active">Relatório de Vendas</a></li>
+        </ul>
+        <div style="margin-top: auto;">
+            <a href="{% url 'app:login' %}" class="btn btn-warning btn-block" style="text-align: center;">Fechar Caixa (Sair)</a>
+        </div>
+    </nav>
+    <main class="main-content">
+        <header class="header">
+            <div>
+                <h1>Fechamento e Relatório do Dia</h1>
+                <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario }}</strong></p>
+            </div>
+        </header>
+        <div class="grid-3">
+            <div class="budget-widget"><h3>Total em Dinheiro</h3><div class="value">R$ 0,00</div></div>
+            <div class="budget-widget"><h3>Total em Cartões/PIX</h3><div class="value">R$ 0,00</div></div>
+            <div class="budget-widget" style="border-top-color: #10b981;"><h3>Total Geral do Dia</h3><div class="value" style="color: #10b981;">R$ 0,00</div></div>
+        </div>
+        <section class="card" style="margin-top: 30px;">
+            <h2>Histórico de Vendas</h2>
+            <table>
+                <thead><tr><th>Nº do Cupom</th><th>Hora</th><th>Método de Pagamento</th><th>Valor (R$)</th><th>Ações</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div class="empty-table-msg">Nenhuma venda registrada hoje.</div>
+            
+            <form action="{% url 'app:relatorio' %}" method="POST" style="margin-top: 30px; text-align: right;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Encerrar Turno e Imprimir Relatório</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
