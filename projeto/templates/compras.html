@@ -10,7 +10,9 @@
     <nav class="sidebar">
         <h2>Logaritmo</h2>
         <ul>
-            <li><a href="{% url 'app:painel' %}" class="active">Compras e Preços</a></li>
+            {% if user.role == 'COMPRAS' or user.role == 'ADMINISTRADOR' %}
+                <li><a href="{% url 'app:painel' %}" class="active">Compras e Preços</a></li>
+            {% endif %}
         </ul>
         <div style="margin-top: auto;">
             <a href="{% url 'app:index' %}" class="btn btn-warning btn-block" style="text-align: center;">Sair do Sistema</a>
@@ -53,7 +55,6 @@
         </div>
     </main>
 
-    <!-- Modal Novo Fornecedor -->
     <div id="modalNovoFornecedor" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header"><h2>Adicionar Novo Fornecedor</h2><button class="close-btn" onclick="fecharModal('modalNovoFornecedor')">&times;</button></div>
@@ -69,7 +70,6 @@
         </div>
     </div>
 
-    <!-- Modal Novo Item -->
     <div id="modalNovoItem" class="modal-overlay hidden">
         <div class="modal-content modal-lg">
             <div class="modal-header"><h2>Comprar / Adicionar Novo Item</h2><button class="close-btn" onclick="fecharModal('modalNovoItem')">&times;</button></div>
@@ -89,7 +89,6 @@
         </div>
     </div>
 
-    <!-- Modal Modificar Preço -->
     <div id="modalModificarPreco" class="modal-overlay hidden">
         <div class="modal-content modal-lg">
             <div class="modal-header">
@@ -130,7 +129,6 @@
         </div>
     </div>
 
-    <!-- Modal de Agendamento -->
     <div id="modalAgendamento" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">

@@ -10,8 +10,10 @@
     <nav class="sidebar">
         <h2>Logaritmo</h2>
         <ul>
-            <li><a href="{% url 'app:caixa' %}">PDV Ativo</a></li>
-            <li><a href="{% url 'app:relatorio' %}" class="active">Relatório de Vendas</a></li>
+            {% if user.role == 'CAIXA' or user.role == 'ADMINISTRADOR' %}
+                <li><a href="{% url 'app:caixa' %}">PDV Ativo</a></li>
+                <li><a href="{% url 'app:relatorio' %}" class="active">Relatório de Vendas</a></li>
+            {% endif %}
         </ul>
         <div style="margin-top: auto;">
             <a href="{% url 'app:index' %}" class="btn btn-warning btn-block" style="text-align: center;">Fechar Caixa (Sair)</a>
