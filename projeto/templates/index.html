@@ -8,23 +8,37 @@
 </head>
 <body class="login-body">
     <div class="login-container">
-        <h1>Logaritmo Ferragens</h1>
-        <p>Acesse o sistema</p>
-        <form action="{% url 'app:dashboard' %}" method="POST">
-            {% csrf_token %}
-            <div class="form-group">
-                <label>Usuário ou E-mail</label>
-                <input type="text" name="usuario" placeholder="Digite seu usuário" required>
+        <h1>Acessar Sistema</h1>
+        <p>Logaritmo Ferragens - Gestão Integrada</p>
+
+        {% if messages %}
+            <div class="messages" style="margin-bottom: 15px;">
+                {% for message in messages %}
+                    <p style="color: {% if message.tags == 'error' %}red{% else %}green{% endif %}; font-weight: bold;">
+                        {{ message }}
+                    </p>
+                {% endfor %}
             </div>
+        {% endif %}
+
+        <form action="{% url 'app:login' %}" method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" name="email" required placeholder="seu.email@logaritmo.com">
+            </div>
+
             <div class="form-group">
                 <label>Senha</label>
-                <input type="password" name="senha" placeholder="Digite sua senha" required>
+                <input type="password" name="senha" required placeholder="••••••••">
             </div>
-            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 10px;">Entrar no Sistema</button>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 15px;">Entrar</button>
         </form>
-        <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
-            <a href="#" style="color: var(--text-light); text-decoration: none; font-size: 0.9rem;">Esqueci minha senha</a>
-            <a href="{% url 'app:cadastro' %}" class="btn btn-warning" style="padding: 8px 16px; font-size: 0.9rem;">Cadastrar-se</a>
+
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{% url 'app:cadastro' %}" style="color: var(--secondary-blue); text-decoration: none;">Cadastrar novo funcionário</a>
         </div>
     </div>
 </body>
