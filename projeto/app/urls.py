@@ -21,7 +21,5 @@ urlpatterns = [
     path('caixa/', views.caixa_pdv_view, name='caixa'),
     path('caixa/relatorio/', views.relatorio_vendas_view, name='relatorio'),
     
-    path('compras/', views.painel_compras_view, name='painel'),
-
-    path('logout/', views.logout_view, name='logout'),
+    path('painel_compras_view/', views.painel_compras_view, name='painel'),
 ]

@@ -1,6 +1,10 @@
-<<<<<<< HEAD
-from django.shortcuts import render
 from django.contrib.auth.decorators import user_passes_test
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout, get_user_model
+
+# Obtém o modelo de usuário ativo (accounts.Usuario)
+Usuario = get_user_model()
 
 def acesso_estoque(user):
     return user.is_authenticated and (user.role == 'ESTOQUE' or user.role == 'ADMINISTRADOR')
@@ -16,15 +20,6 @@ def acesso_compras(user):
 
 def login_view(request):
     return render(request, 'index.html')
-=======
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout, get_user_model
-
-# Obtém o modelo de usuário ativo (accounts.Usuario)
-Usuario = get_user_model()
->>>>>>> 3feed93 (ta funfando eu acho)
-
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -90,58 +85,35 @@ def deletar_usuario_view(request, id=None):
 def dashboard_view(request):
     return render(request, 'dashboard_admin.html')
 
-<<<<<<< HEAD
-@user_passes_test(acesso_estoque)
-=======
 
->>>>>>> 3feed93 (ta funfando eu acho)
+@user_passes_test(acesso_estoque)
 def controle_estoque_view(request):
     return render(request, 'estoque_controle.html')
 
 
-<<<<<<< HEAD
+
 @user_passes_test(acesso_estoque)
-=======
->>>>>>> 3feed93 (ta funfando eu acho)
 def detalhes_item_view(request):
     return render(request, 'estoque_item.html')
 
-
-<<<<<<< HEAD
 @user_passes_test(acesso_estoque)
-=======
->>>>>>> 3feed93 (ta funfando eu acho)
 def etiquetas_view(request):
     return render(request, 'estoque_etiquetas.html')
 
-
-<<<<<<< HEAD
 @user_passes_test(acesso_vendas)
-=======
->>>>>>> 3feed93 (ta funfando eu acho)
 def nova_venda_view(request):
     return render(request, 'vendas_vendedor.html')
 
-
-<<<<<<< HEAD
 @user_passes_test(acesso_caixa)
-=======
->>>>>>> 3feed93 (ta funfando eu acho)
 def caixa_pdv_view(request):
     return render(request, 'vendas_caixa.html')
 
 
-<<<<<<< HEAD
+
 @user_passes_test(acesso_caixa)
-=======
->>>>>>> 3feed93 (ta funfando eu acho)
 def relatorio_vendas_view(request):
     return render(request, 'caixa_relatorio.html')
 
-
-<<<<<<< HEAD
 @user_passes_test(acesso_compras)
-=======
->>>>>>> 3feed93 (ta funfando eu acho)
 def painel_compras_view(request):
     return render(request, 'compras.html')
