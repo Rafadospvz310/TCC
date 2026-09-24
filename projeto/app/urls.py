@@ -23,5 +23,5 @@ urlpatterns = [
     
     path('compras/', views.painel_compras_view, name='painel'),
 
-    path('logout/', views.logout_view, name='logout'),
+    path('index/', views.logout_view, name='index'),
 ]
