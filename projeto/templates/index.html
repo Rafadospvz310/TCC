@@ -21,7 +21,7 @@
             </div>
         {% endif %}
 
-        <form action="{% url 'app:login' %}" method="POST">
+        <form action="{% url 'app:index' %}" method="POST">
             {% csrf_token %}
             
             <div class="form-group">

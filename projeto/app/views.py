@@ -43,7 +43,7 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     messages.info(request, 'Sessão encerrada.')
-    return redirect('app:login')
+    return redirect('app:index')
 
 
 def cadastro_view(request):
@@ -51,24 +51,37 @@ def cadastro_view(request):
         nome = request.POST.get('nome_completo') or request.POST.get('nome')
         email = request.POST.get('email')
         senha = request.POST.get('senha')
+        cargo_form = request.POST.get('cargo')  # 1. Captura o cargo vindo do formulário
 
         if Usuario.objects.filter(email=email).exists():
             messages.error(request, 'Este e-mail já está cadastrado!')
             return render(request, 'cadastro.html')
 
-        # Cria e salva o usuário no MariaDB/MySQL com senha criptografada
+        # 2. Mapeia os valores do <select> para as constantes do seu model (maiúsculas)
+        mapeamento_roles = {
+            'admin': 'ADMINISTRADOR',
+            'estoque': 'ESTOQUE',
+            'vendas': 'VENDEDOR',
+            'caixa': 'CAIXA',
+            'compras': 'COMPRAS',
+        }
+
+        # Pega a role correspondente ou define 'VENDEDOR' como padrão caso venha vazio
+        role = mapeamento_roles.get(cargo_form, 'VENDEDOR')
+
+        # 3. Cria e salva o usuário atribuindo a propriedade 'role'
         usuario = Usuario.objects.create_user(
             username=email,
             email=email,
             password=senha,
-            first_name=nome
+            first_name=nome,
+            role=role  # <-- Passa o cargo/role correto aqui
         )
 
         messages.success(request, 'Funcionário cadastrado com sucesso!')
-        return redirect('app:login')
+        return redirect('app:index')
 
     return render(request, 'cadastro.html')
-
 
 def listar_usuarios_view(request):
     return render(request, 'listar.html')
