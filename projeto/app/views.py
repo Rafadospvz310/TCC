@@ -1,11 +1,13 @@
-from .forms import UsuarioCadastroForm
-from django.shortcuts import render
-from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from .forms import UsuarioCadastroForm
 
-#Separacao de telas por patente de usuario
+# Obtém o modelo de usuário ativo (accounts.Usuario)
+Usuario = get_user_model()
+
+# Separacao de telas por patente de usuario
 def acesso_estoque(user):
     return user.is_authenticated and (user.role == 'ESTOQUE' or user.role == 'ADMINISTRADOR')
 
@@ -17,12 +19,6 @@ def acesso_caixa(user):
 
 def acesso_compras(user):
     return user.is_authenticated and (user.role == 'COMPRAS' or user.role == 'ADMINISTRADOR')
-
-def login_view(request):
-    return render(request, 'index.html')
-
-# Obtém o modelo de usuário ativo (accounts.Usuario)
-Usuario = get_user_model()
 
 
 def login_view(request):
@@ -49,6 +45,7 @@ def logout_view(request):
     messages.info(request, 'Sessão encerrada.')
     return redirect('app:login')
 
+
 def cadastro_view(request):
     if request.method == 'POST':
         form = UsuarioCadastroForm(request.POST)
@@ -60,12 +57,11 @@ def cadastro_view(request):
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, error)
+                    messages.error(request, f"Erro no campo '{field}': {error}")
     else:
         form = UsuarioCadastroForm()
 
     return render(request, 'cadastro.html', {'form': form})
-
 
 
 def listar_usuarios_view(request):
@@ -85,16 +81,13 @@ def dashboard_view(request):
 
 
 @user_passes_test(acesso_estoque)
-
 def controle_estoque_view(request):
     return render(request, 'estoque_controle.html')
 
 
 @user_passes_test(acesso_estoque)
-
 def detalhes_item_view(request):
     return render(request, 'estoque_item.html')
-
 
 
 @user_passes_test(acesso_estoque)
@@ -102,15 +95,14 @@ def etiquetas_view(request):
     return render(request, 'estoque_etiquetas.html')
 
 
-
 @user_passes_test(acesso_vendas)
 def nova_venda_view(request):
     return render(request, 'vendas_vendedor.html')
 
+
 @user_passes_test(acesso_caixa)
 def caixa_pdv_view(request):
     return render(request, 'vendas_caixa.html')
-
 
 
 @user_passes_test(acesso_caixa)
