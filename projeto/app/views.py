@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
-from .forms import UsuarioCadastroForm
+from .forms import UsuarioCadastroForm, FornecedorCadastro
+from .models import Fornecedor
+
 
 # Obtém o modelo de usuário ativo (accounts.Usuario)
 Usuario = get_user_model()
@@ -63,6 +65,20 @@ def cadastro_view(request):
 
     return render(request, 'cadastro.html', {'form': form})
 
+def cadastro_fornecedor_view(request):
+    if request.method == 'POST':
+        form = FornecedorCadastro(request.POST)
+    
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Fornecedor cadastrado com sucesso!') # Corrigido 'menssages' para 'messages'
+            return redirect('app:compras')
+        else:
+            for field, errors in form.errors.items(): # Corrigido 'fields', 'erros.item()' para 'field', 'errors.items()'
+                for error in errors:
+                    messages.error(request, f"Erro no campo '{field}': {error}")
+    else:
+        form = FornecedorCadastro()
 
 def listar_usuarios_view(request):
     return render(request, 'listar.html')
@@ -113,3 +129,29 @@ def relatorio_vendas_view(request):
 @user_passes_test(acesso_compras)
 def painel_compras_view(request):
     return render(request, 'compras.html')
+
+
+@user_passes_test(acesso_compras)
+def painel_compras_view(request):
+    if request.method == 'POST':
+        form = FornecedorCadastro(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Fornecedor cadastrado com sucesso!')
+            return redirect('app:compras') # Ou o nome da rota exata da sua página de compras nas URLs
+        else:
+            # Isso vai mostrar na tela se houver algum erro invisível no preenchimento
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Erro no campo '{field}': {error}")
+    else:
+        form = FornecedorCadastro()
+
+    fornecedores = Fornecedor.objects.all()
+
+    context = {
+        'form': form,
+        'fornecedores': fornecedores,
+    }
+    return render(request, 'compras.html', context)
+    

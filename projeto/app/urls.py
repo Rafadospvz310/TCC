@@ -24,6 +24,7 @@ urlpatterns = [
     path('caixa/relatorio/', views.relatorio_vendas_view, name='relatorio'),
     
     path('painel_compras_view/', views.painel_compras_view, name='painel'),
+    path('painel_compras_view/', views.painel_compras_view, name='compras'),
 
     path('login/', views.login_view, name='login'),
 ]

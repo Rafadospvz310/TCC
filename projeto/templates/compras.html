@@ -57,19 +57,32 @@
 
     <div id="modalNovoFornecedor" class="modal-overlay hidden">
         <div class="modal-content">
-            <div class="modal-header"><h2>Adicionar Novo Fornecedor</h2><button class="close-btn" onclick="fecharModal('modalNovoFornecedor')">&times;</button></div>
+            <div class="modal-header">
+                <h2>Adicionar Novo Fornecedor</h2>
+                <button class="close-btn" onclick="fecharModal('modalNovoFornecedor')">&times;</button>
+            </div>
             <div class="modal-body">
-                <form action="{% url 'app:painel' %}" method="POST">
+                <form action="{% url 'app:compras' %}" method="POST">
                     {% csrf_token %}
-                    <div class="form-group"><label>Nome da Empresa (Razão Social / Fantasia)</label><input type="text" name="nome_empresa" required></div>
-                    <div class="grid-2"><div class="form-group"><label>CNPJ</label><input type="text" name="cnpj"></div><div class="form-group"><label>Telefone de Contato</label><input type="text" name="telefone" required></div></div>
+                    <div class="form-group">
+                        <label>Nome da Empresa (Razão Social / Fantasia)</label>
+                        <input type="text" name="nome" required>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group"><label>CNPJ</label><input type="text" name="CNPJ"></div>
+                        <div class="form-group"><label>Telefone de Contato</label><input type="text" name="telefone" required></div>
+                    </div>
+                    <div class="form-group"><label>E-mail</label><input type="email" name="email"></div>
                     <div class="form-group"><label>Categorias de Produtos Fornecidos</label><input type="text" name="categorias"></div>
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalNovoFornecedor')">Cancelar</button><button type="submit" class="btn btn-primary">Cadastrar Fornecedor</button></div>
+                    
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalNovoFornecedor')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Cadastrar Fornecedor</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-
     <div id="modalNovoItem" class="modal-overlay hidden">
         <div class="modal-content modal-lg">
             <div class="modal-header"><h2>Comprar / Adicionar Novo Item</h2><button class="close-btn" onclick="fecharModal('modalNovoItem')">&times;</button></div>

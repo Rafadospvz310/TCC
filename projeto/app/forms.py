@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from .models import Fornecedor
 
 # Vai buscar o seu modelo automaticamente, quer esteja na app 'accounts' ou 'app'
 Usuario = get_user_model()
@@ -28,3 +29,7 @@ class UsuarioCadastroForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+class FornecedorCadastro(forms.ModelForm):
+    class Meta:
+        model = Fornecedor
+        fields = ['nome', 'CNPJ', 'telefone', 'email', 'categorias']
