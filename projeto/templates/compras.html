@@ -50,7 +50,23 @@
             <section class="card">
                 <h2>Lista de Fornecedores</h2>
                 <table><thead><tr><th>Empresa</th><th>Contato</th><th>Categoria</th></tr></thead><tbody></tbody></table>
-                <div class="empty-table-msg">Nenhum fornecedor cadastrado.</div>
+                <tbody>
+                 {% for fornecedor in Fornecedores %}
+                    <tr>
+                        <td>{{ fornecedor.nome }}</td>
+                        <td>{{ fornecedor.CNPJ }}</td>
+                        <td>{{ fornecedor.telefone }}</td>
+                        <td>{{ fornecedor.email}}</td>
+                        <td>{{ fornecedor.categoria }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 20px;">
+                            <div class="empty-table-msg">Nenhum fornecedor cadastrado.</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
             </section>
         </div>
     </main>

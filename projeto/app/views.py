@@ -128,30 +128,12 @@ def relatorio_vendas_view(request):
 
 @user_passes_test(acesso_compras)
 def painel_compras_view(request):
-    return render(request, 'compras.html')
-
-
-@user_passes_test(acesso_compras)
-def painel_compras_view(request):
-    if request.method == 'POST':
-        form = FornecedorCadastro(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Fornecedor cadastrado com sucesso!')
-            return redirect('app:compras') # Ou o nome da rota exata da sua página de compras nas URLs
-        else:
-            # Isso vai mostrar na tela se houver algum erro invisível no preenchimento
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"Erro no campo '{field}': {error}")
-    else:
-        form = FornecedorCadastro()
-
-    fornecedores = Fornecedor.objects.all()
+    lista_de_fornecedores = Fornecedor.objects.all()
 
     context = {
-        'form': form,
-        'fornecedores': fornecedores,
+        'fornecedor': lista_de_fornecedores
     }
+
     return render(request, 'compras.html', context)
+
     
