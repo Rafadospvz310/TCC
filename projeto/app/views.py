@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
-from .forms import UsuarioCadastroForm, FornecedorCadastro
-from .models import Fornecedor
+from .forms import UsuarioCadastroForm, FornecedorCadastro, ProdutoCadastro
+from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda
 
 
 # Obtém o modelo de usuário ativo (accounts.Usuario)
@@ -128,10 +128,45 @@ def relatorio_vendas_view(request):
 
 @user_passes_test(acesso_compras)
 def painel_compras_view(request):
-    lista_de_fornecedores = Fornecedor.objects.all()
+    if request.method == 'POST':
+        # Identifica se a requisição veio do formulário de Produto ou de Fornecedor
+        if 'nome_produto' in request.POST:
+            # Mapeia os inputs do HTML para o formulário do Django
+            dados_produto = {
+                'nome': request.POST.get('nome_produto'),
+                'fornecedor': request.POST.get('fornecedor_id'),
+                'categoria': request.POST.get('categoria'),
+                'codigo_barras': request.POST.get('codigo_barras'),
+                'preco_custo': request.POST.get('preco_custo'),
+                'quantidade': request.POST.get('quantidade'),
+            }
+            form_produto = ProdutoCadastro(dados_produto, request.FILES)
+            if form_produto.is_valid():
+                form_produto.save()
+                messages.success(request, 'Produto adicionado ao estoque com sucesso!')
+            else:
+                for field, errors in form_produto.errors.items():
+                    for error in errors:
+                        messages.error(request, f"Erro no campo '{field}': {error}")
+            return redirect('app:painel')
+
+        elif 'nome' in request.POST:
+            form_fornecedor = FornecedorCadastro(request.POST)
+            if form_fornecedor.is_valid():
+                form_fornecedor.save()
+                messages.success(request, 'Fornecedor cadastrado com sucesso!')
+            else:
+                for field, errors in form_fornecedor.errors.items():
+                    for error in errors:
+                        messages.error(request, f"Erro no campo '{field}': {error}")
+            return redirect('app:painel')
+
+    # Busca a lista de fornecedores cadastrados para popular os selects do HTML
+    lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
 
     context = {
-        'fornecedor': lista_de_fornecedores
+        'fornecedores': lista_de_fornecedores,
+        'nome_usuario': request.user.first_name or request.user.username,
     }
 
     return render(request, 'compras.html', context)

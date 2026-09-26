@@ -48,26 +48,36 @@
                 </div>
             </section>
             <section class="card">
-                <h2>Lista de Fornecedores</h2>
-                <table><thead><tr><th>Empresa</th><th>Contato</th><th>Categoria</th></tr></thead><tbody></tbody></table>
-                <tbody>
-                 {% for fornecedor in Fornecedores %}
-                    <tr>
-                        <td>{{ fornecedor.nome }}</td>
-                        <td>{{ fornecedor.CNPJ }}</td>
-                        <td>{{ fornecedor.telefone }}</td>
-                        <td>{{ fornecedor.email}}</td>
-                        <td>{{ fornecedor.categoria }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="3" style="text-align: center; padding: 20px;">
-                            <div class="empty-table-msg">Nenhum fornecedor cadastrado.</div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-            </section>
+    <h2>Lista de Fornecedores</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Empresa</th>
+                <th>CNPJ</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Categorias</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fornecedor in fornecedores %}
+                <tr>
+                    <td>{{ fornecedor.nome }}</td>
+                    <td>{{ fornecedor.CNPJ|default:"-" }}</td>
+                    <td>{{ fornecedor.telefone }}</td>
+                    <td>{{ fornecedor.email|default:"-" }}</td>
+                    <td>{{ fornecedor.categorias|default:"-" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 20px;">
+                        <div class="empty-table-msg">Nenhum fornecedor cadastrado.</div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
         </div>
     </main>
 
@@ -78,45 +88,86 @@
                 <button class="close-btn" onclick="fecharModal('modalNovoFornecedor')">&times;</button>
             </div>
             <div class="modal-body">
-                <form action="{% url 'app:compras' %}" method="POST">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label>Nome da Empresa (Razão Social / Fantasia)</label>
-                        <input type="text" name="nome" required>
-                    </div>
-                    <div class="grid-2">
-                        <div class="form-group"><label>CNPJ</label><input type="text" name="CNPJ"></div>
-                        <div class="form-group"><label>Telefone de Contato</label><input type="text" name="telefone" required></div>
-                    </div>
-                    <div class="form-group"><label>E-mail</label><input type="email" name="email"></div>
-                    <div class="form-group"><label>Categorias de Produtos Fornecidos</label><input type="text" name="categorias"></div>
-                    
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-                        <button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalNovoFornecedor')">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Cadastrar Fornecedor</button>
-                    </div>
-                </form>
+                <!-- Mude a action para {% url 'app:painel' %} -->
+<form action="{% url 'app:painel' %}" method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+        <label>Nome da Empresa (Razão Social / Fantasia)</label>
+        <!-- O parâmetro 'name' precisa ser 'nome' conforme o models.py -->
+        <input type="text" name="nome" required>
+    </div>
+    <div class="grid-2">
+        <div class="form-group"><label>CNPJ</label><input type="text" name="CNPJ"></div>
+        <div class="form-group"><label>Telefone de Contato</label><input type="text" name="telefone" required></div>
+    </div>
+    <div class="form-group"><label>E-mail</label><input type="email" name="email"></div>
+    <div class="form-group"><label>Categorias de Produtos Fornecidos</label><input type="text" name="categorias"></div>
+    
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalNovoFornecedor')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Cadastrar Fornecedor</button>
+    </div>
+</form>
             </div>
         </div>
     </div>
     <div id="modalNovoItem" class="modal-overlay hidden">
-        <div class="modal-content modal-lg">
-            <div class="modal-header"><h2>Comprar / Adicionar Novo Item</h2><button class="close-btn" onclick="fecharModal('modalNovoItem')">&times;</button></div>
-            <div class="modal-body">
-                <form action="{% url 'app:painel' %}" method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="grid-2"><div class="form-group"><label>Nome do Produto</label><input type="text" name="nome_produto" required></div><div class="form-group"><label>Fornecedor</label><select name="fornecedor_id" required><option value="">Selecione...</option></select></div></div>
-                    <div class="grid-2"><div class="form-group"><label>Categoria/Tipo</label><select name="categoria"><option value="">Selecione...</option></select></div><div class="form-group"><label>Código de Barras</label><input type="text" name="codigo_barras"></div></div>
-                    <div class="grid-3">
-                        <div class="form-group"><label>Preço de Custo (Unidade)</label><input type="number" name="preco_custo" step="0.01" required></div>
-                        <div class="form-group"><label>Quantidade Adquirida</label><input type="number" name="quantidade" required></div>
-                        <div class="form-group"><label>Foto do Produto (Imagem)</label><input type="file" accept="image/*" name="foto_produto"></div>
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h2>Comprar / Adicionar Novo Item</h2>
+            <button class="close-btn" onclick="fecharModal('modalNovoItem')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Certifique-se de manter enctype="multipart/form-data" para upload de imagens -->
+            <form action="{% url 'app:painel' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Nome do Produto</label>
+                        <input type="text" name="nome_produto" required>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalNovoItem')">Cancelar</button><button type="submit" class="btn btn-success">Adicionar ao Estoque</button></div>
-                </form>
-            </div>
+                    <div class="form-group">
+                        <label>Fornecedor</label>
+                        <select name="fornecedor_id" required>
+                            <option value="">Selecione...</option>
+                            {% for f in fornecedores %}
+                                <option value="{{ f.id }}">{{ f.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Categoria/Tipo</label>
+                        <input type="text" name="categoria" placeholder="Ex: Ferramentas, Elétrica...">
+                    </div>
+                    <div class="form-group">
+                        <label>Código de Barras</label>
+                        <input type="text" name="codigo_barras">
+                    </div>
+                </div>
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label>Preço de Custo (Unidade)</label>
+                        <input type="number" name="preco_custo" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade Adquirida</label>
+                        <input type="number" name="quantidade" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Foto do Produto (Imagem)</label>
+                        <input type="file" accept="image/*" name="foto">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalNovoItem')">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Adicionar ao Estoque</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
     <div id="modalModificarPreco" class="modal-overlay hidden">
         <div class="modal-content modal-lg">
