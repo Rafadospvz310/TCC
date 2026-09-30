@@ -5,6 +5,80 @@
     <meta charset="UTF-8">
     <title>Etiquetas - Logaritmo Ferragens</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
+    
+    <style>
+        /* Estilos da lista visual de produtos */
+        .produtos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            margin-top: 15px;
+            padding-right: 5px;
+        }
+        .produto-card-item {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .produto-card-item:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .produto-card-item.selected {
+            border: 2px solid var(--primary-blue);
+            background-color: #f0f7ff;
+        }
+        .produto-card-thumb {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background-color: var(--bg-color);
+        }
+        .produto-card-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            line-clamp: 2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+
+        /* Impressão */
+        @media print {
+            body * { visibility: hidden; }
+            #area-impressao, #area-impressao * { visibility: visible; }
+            #area-impressao {
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                display: flex !important;
+                flex-wrap: wrap; gap: 15px;
+            }
+            .etiqueta-print {
+                width: 48%;
+                border: 1px dashed #000;
+                padding: 15px;
+                text-align: center;
+                box-sizing: border-box;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
 </head>
 <body>
     <nav class="sidebar">
@@ -18,6 +92,7 @@
             <a href="{% url 'app:index' %}" class="btn btn-warning btn-block" style="text-align: center;">Sair do Sistema</a>
         </div>
     </nav>
+
     <main class="main-content">
         <header class="header">
             <div>
@@ -25,44 +100,92 @@
                 <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario|default:"Usuário" }}</strong></p>
             </div>
         </header>
+
         <div class="grid-2">
+            <!-- Card de Seleção e Busca de Produtos -->
             <section class="card">
-                <h2>Buscar Produto</h2>
-                <form action="{% url 'app:etiquetas' %}" method="GET">
-                    <div class="form-group">
-                        <label>Código Interno, Código de Barras ou Nome:</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" name="busca_etiqueta" placeholder="Ex: Parafuso francês..." autofocus required>
-                            <button type="submit" class="btn btn-primary">Buscar</button>
-                        </div>
+    <h2>Selecione o Produto</h2>
+    
+    <form action="{% url 'app:etiquetas' %}" method="GET" style="margin-bottom: 15px;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" name="busca_etiqueta" value="{{ busca }}" placeholder="Filtrar por nome ou código..." autofocus>
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Lista com Todos os Produtos Registrados -->
+    <div class="produtos-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-height: 380px; overflow-y: auto; margin-top: 15px;">
+        {% for p in todos_produtos %}
+            <a href="{% url 'app:etiquetas' %}?produto_id={{ p.id }}" 
+               style="border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center; background: white; text-decoration: none; color: inherit; display: flex; flex-direction: column; align-items: center; {% if produto and produto.id == p.id %}border: 2px solid var(--primary-blue); background-color: #f0f7ff;{% endif %}">
+                
+                {% if p.foto %}
+                    <img src="{{ p.foto.url }}" alt="{{ p.nome }}" style="width: 70px; height: 70px; object-fit: contain; border-radius: 6px; margin-bottom: 8px;">
+                {% else %}
+                    <div style="width: 70px; height: 70px; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #64748b; border-radius: 6px; margin-bottom: 8px; font-weight: 500;">
+                        Sem foto
                     </div>
-                </form>
-                <div style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; color: var(--text-light);">
-                    <p>Faça uma busca para pré-visualizar a etiqueta.</p>
-                </div>
-            </section>
+                {% endif %}
+                
+                <span style="font-size: 0.85rem; font-weight: 600; line-clamp: 2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">{{ p.nome }}</span>
+            </a>
+        {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; color: var(--text-light); padding: 20px;">
+                Nenhum produto cadastrado no momento.
+            </div>
+        {% endfor %}
+    </div>
+</section>
             
+            <!-- Card de Pré-visualização e Impressão -->
             <section class="card">
                 <h2>Pré-visualização da Etiqueta</h2>
                 <div style="border: 2px dashed var(--border-color); padding: 30px; text-align: center; border-radius: 8px; background: white; margin-bottom: 20px;">
-                    <h3 style="font-size: 1.2rem; color: var(--text-main); margin-bottom: 10px;">{{ produto.nome|default:"Nome do Produto (Exemplo)" }}</h3>
+                    <h3 style="font-size: 1.2rem; color: var(--text-main); margin-bottom: 10px;">{{ produto.nome|default:"Selecione um Produto" }}</h3>
                     <div style="height: 60px; background: repeating-linear-gradient(90deg, #333, #333 3px, transparent 3px, transparent 6px, #333 6px, #333 7px, transparent 7px, transparent 10px); margin: 0 auto 10px auto; width: 80%;"></div>
-                    <p style="font-family: monospace; font-size: 1rem; color: var(--text-light); letter-spacing: 2px;">{{ produto.codigo_barras|default:"7891234567890" }}</p>
-                    <h2 style="font-size: 2.2rem; color: var(--primary-blue); margin-top: 15px;">R$ {{ produto.preco|default:"0,00" }}</h2>
+                    <p style="font-family: monospace; font-size: 1rem; color: var(--text-light); letter-spacing: 2px;">{{ produto.codigo_barras|default:"0000000000000" }}</p>
+                    <h2 style="font-size: 2.2rem; color: var(--primary-blue); margin-top: 15px;">R$ {{ produto.preco_custo|default:"0,00" }}</h2>
                 </div>
                 
                 <form action="{% url 'app:etiquetas' %}" method="POST">
                     {% csrf_token %}
-                    <input type="hidden" name="produto_id" value="{{ produto.id }}">
+                    <input type="hidden" name="produto_id" value="{{ produto.id|default:'' }}">
+                    <input type="hidden" name="imprimir" value="true">
                     
                     <div class="form-group">
                         <label>Quantidade de Etiquetas a Imprimir:</label>
-                        <input type="number" name="qtd_etiquetas" value="1" min="1">
+                        <input type="number" name="qtd_etiquetas" value="{{ qtd_etiquetas }}" min="1" {% if not produto %}disabled{% endif %}>
                     </div>
-                    <button type="submit" class="btn btn-success btn-block" style="font-size: 1.1rem; padding: 15px;">Imprimir Etiquetas</button>
+                    <button type="submit" class="btn btn-success btn-block" style="font-size: 1.1rem; padding: 15px;" {% if not produto %}disabled style="opacity: 0.6; cursor: not-allowed;"{% endif %}>
+                        Imprimir Etiquetas
+                    </button>
                 </form>
             </section>
         </div>
     </main>
+
+    <!-- Área de Impressão -->
+    {% if produto %}
+    <div id="area-impressao" style="display: none;">
+        {% for i in "x"|rjust:qtd_etiquetas %}
+        <div class="etiqueta-print">
+            <h3 style="font-size: 1.1rem; margin-bottom: 5px;">{{ produto.nome }}</h3>
+            <div style="height: 50px; background: repeating-linear-gradient(90deg, #000, #000 3px, transparent 3px, transparent 6px, #000 6px, #000 7px, transparent 7px, transparent 10px); margin: 5px auto; width: 85%;"></div>
+            <p style="font-family: monospace; font-size: 0.9rem; margin-bottom: 5px;">{{ produto.codigo_barras|default:produto.id }}</p>
+            <h2 style="font-size: 1.8rem; margin: 0;">R$ {{ produto.preco_custo }}</h2>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if imprimir %}
+    <script>
+        window.onload = function() {
+            window.print();
+        }
+    </script>
+    {% endif %}
 </body>
 </html>

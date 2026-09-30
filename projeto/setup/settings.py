@@ -18,6 +18,9 @@ SECRET_KEY = 'secret_key'         #os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 ALLOWED_HOSTS = []
 
 LOGIN_URL = 'app:index'
@@ -74,10 +77,10 @@ WSGI_APPLICATION = 'setup.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'projeto-tcc',    
+        'NAME': '',    
         'USER': 'root',
-        'PASSWORD': 'Senha#123',
-        'HOST': '192.168.0.29',  
+        'PASSWORD': '',
+        'HOST': '',  
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",

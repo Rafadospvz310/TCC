@@ -30,8 +30,8 @@
                 <div>
                     <h3 style="margin-bottom: 15px; color: var(--primary-blue);">Imagem do Produto</h3>
                     <div class="photo-box">
-                        {% if produto.foto %}
-                            <img src="{{ produto.foto.url }}" alt="{{ produto.nome }}">
+                        {% if produto and produto.foto %}
+                            <img src="{{ produto.foto.url }}" alt="{{ produto.nome }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                         {% else %}
                             <span>Sem Imagem Cadastrada</span>
                         {% endif %}
@@ -40,26 +40,26 @@
                 <div>
                     <h2 style="font-size: 1.8rem; margin-bottom: 5px;">{{ produto.nome|default:"Nome do Produto" }}</h2>
                     <p style="color: var(--text-light); margin-bottom: 30px;">
-                        Marca: <strong>{{ produto.marca|default:"-" }}</strong> &nbsp;|&nbsp; 
+                        Marca: <strong>{{ produto.fornecedor.nome|default:"-" }}</strong> &nbsp;|&nbsp; 
                         Categoria: <strong>{{ produto.categoria|default:"-" }}</strong>
                     </p>
                     <div class="grid-2">
                         <div class="form-group">
                             <label>Código Numérico Interno:</label>
-                            <input type="text" value="{{ produto.codigo_interno }}" readonly style="background-color: var(--bg-color);">
+                            <input type="text" value="{% if produto %}#{{ produto.id }}{% endif %}" readonly style="background-color: var(--bg-color);">
                         </div>
                         <div class="form-group">
                             <label>Código de Barras:</label>
-                            <input type="text" value="{{ produto.codigo_barras }}" readonly style="background-color: var(--bg-color);">
+                            <input type="text" value="{{ produto.codigo_barras|default:'' }}" readonly style="background-color: var(--bg-color);">
                         </div>
                     </div>
                     <div style="background-color: var(--bg-color); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); margin-top: 15px;">
                         <div class="budget-widget" style="border-top-color: var(--secondary-blue); background: white;">
-                            <h3>Preço de Venda</h3>
-                            <div class="value">R$ {{ produto.preco|default:"0,00" }}</div>
+                            <h3>PREÇO DE VENDA</h3>
+                            <div class="value">R$ {{ produto.preco_custo|default:"0,00" }}</div>
                         </div>
                         <div class="budget-widget" style="border-top-color: #10b981; margin-top: 20px; background: white;">
-                            <h3>Estoque Atual</h3>
+                            <h3>ESTOQUE ATUAL</h3>
                             <div class="value" style="color: #10b981;">{{ produto.quantidade|default:"0" }} UN</div>
                         </div>
                     </div>

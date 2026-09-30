@@ -19,34 +19,79 @@
         </div>
     </nav>
     <main class="main-content">
-        <header class="header">
-            <div>
-                <h1>Controle de Estoque</h1>
-                <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario }}</strong></p>
-            </div>
-        </header>
-        <div class="grid-3" style="margin-bottom: 30px;">
-            <div class="budget-widget" style="border-top-color: var(--secondary-blue);">
-                <h3>Tipos de Produtos Cadastrados</h3>
-                <div class="value">0</div>
-            </div>
-            <div class="budget-widget" style="border-top-color: #10b981;">
-                <h3>Total de Itens Físicos (Unidades)</h3>
-                <div class="value" style="color: #10b981;">0</div>
-            </div>
-            <div class="budget-widget" style="border-top-color: var(--primary-yellow);">
-                <h3>Valor Total em Estoque</h3>
-                <div class="value" style="color: var(--primary-yellow);">R$ 0,00</div>
-            </div>
+    <header class="header">
+        <div>
+            <h1>Controle de Estoque</h1>
+            <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario|default:"Estoque" }}</strong></p>
         </div>
-        <section class="card">
-            <h2>Inventário Atual</h2>
-            <table>
-                <thead><tr><th>Cód. Interno</th><th>Cód. Barras</th><th>Nome do Produto</th><th>Marca</th><th>Categoria</th><th>Preço (R$)</th><th>Qtd.</th><th>Ações</th></tr></thead>
-                <tbody id="tabela-estoque"></tbody>
-            </table>
-            <div class="empty-table-msg">Nenhum produto cadastrado no estoque no momento.</div>
-        </section>
-    </main>
+    </header>
+
+    <!-- Cards de Resumo -->
+    <div class="grid-3" style="margin-bottom: 30px;">
+        <div class="budget-widget" style="border-top-color: var(--secondary-blue);">
+            <h3>Tipos de Produtos Cadastrados</h3>
+            <div class="value">{{ total_tipos }}</div>
+        </div>
+        <div class="budget-widget" style="border-top-color: #10b981;">
+            <h3>Total de Itens Físicos (Unidades)</h3>
+            <div class="value" style="color: #10b981;">{{ total_unidades }}</div>
+        </div>
+        <div class="budget-widget" style="border-top-color: var(--primary-yellow);">
+            <h3>Valor Total em Estoque</h3>
+            <div class="value" style="color: var(--primary-yellow);">R$ {{ valor_total|floatformat:2 }}</div>
+        </div>
+    </div>
+
+    <!-- Tabela de Inventário -->
+    <section class="card">
+    <h2>Inventário Atual</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Cód. Interno</th>
+                <th>Cód. Barras</th>
+                <th>Nome do Produto</th>
+                <th>Fornecedor</th>
+                <th>Categoria</th>
+                <th>Preço de Custo (R$)</th>
+                <th>Qtd.</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-estoque">
+            {% for produto in produtos %}
+                <td>
+                    <a href="{% url 'app:item_detalhe' produto.id %}" style="color: var(--primary-blue); text-decoration: none;">
+                        <strong>{{ produto.nome }}</strong>
+                    </a>
+                </td>
+                <tr>
+                    <td>#{{ produto.id }}</td>
+                    <td>{{ produto.codigo_barras|default:"-" }}</td>
+                    <td><strong>{{ produto.nome }}</strong></td>
+                    <td>{{ produto.fornecedor.nome }}</td>
+                    <td>{{ produto.categoria|default:"-" }}</td>
+                    <td>R$ {{ produto.preco_custo }}</td>
+                    <td><span class="badge">{{ produto.quantidade }}</span></td>
+                    <td>
+                        <form action="{% url 'app:deletar_produto' produto.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja remover o produto {{ produto.nome }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background-color: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Remover
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 20px;">
+                        <div class="empty-table-msg">Nenhum produto cadastrado no estoque no momento.</div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+</main>
 </body>
 </html>
