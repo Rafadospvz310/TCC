@@ -127,8 +127,31 @@ def controle_estoque_view(request):
 
 
 @user_passes_test(acesso_estoque)
-def detalhes_item_view(request):
-    return render(request, 'estoque_item.html')
+def detalhes_item_view(request, produto_id=None):
+    produto = None
+    
+    codigo_interno = request.GET.get('codigo_interno', '').strip()
+    codigo_barras = request.GET.get('codigo_barras', '').strip()
+
+    if produto_id:
+        produto = get_object_or_404(Produto, id=produto_id)
+        
+    elif codigo_interno:
+        busca_id = codigo_interno.replace('#', '')
+        if busca_id.isdigit():
+            produto = Produto.objects.filter(id=busca_id).first()
+            
+    elif codigo_barras:
+        produto = Produto.objects.filter(codigo_barras=codigo_barras).first()
+
+    context = {
+        'produto': produto,
+        'codigo_interno_digitado': codigo_interno,
+        'codigo_barras_digitado': codigo_barras,
+        'nome_usuario': request.user.first_name or request.user.username,
+    }
+    
+    return render(request, 'estoque_item.html', context)
 
 @user_passes_test(acesso_estoque)
 def deletar_produto_view(request, produto_id):
@@ -142,22 +165,33 @@ def deletar_produto_view(request, produto_id):
 @user_passes_test(acesso_estoque)
 def consultar_item_view(request, produto_id=None):
     produto = None
-    query = request.GET.get('q', '').strip()
+    
+    # Em vez de 'q', nós capturamos os dois campos do HTML
+    codigo_interno = request.GET.get('codigo_interno', '').strip()
+    codigo_barras = request.GET.get('codigo_barras', '').strip()
 
+    # 1. Mantém a sua lógica original: Se vier um ID direto pela URL
     if produto_id:
         produto = get_object_or_404(Produto, id=produto_id)
-    elif query:
-        # Tenta buscar por ID se for número ou por código de barras
-        if query.isdigit():
-            produto = Produto.objects.filter(id=query).first()
-        if not produto:
-            produto = Produto.objects.filter(codigo_barras=query).first()
+        
+    # 2. Se o usuário digitou no campo de Código Numérico Interno
+    elif codigo_interno:
+        busca_id = codigo_interno.replace('#', '') # Remove a '#' se ele digitar
+        if busca_id.isdigit():
+            produto = Produto.objects.filter(id=busca_id).first()
+            
+    # 3. Se o usuário digitou no campo de Código de Barras
+    elif codigo_barras:
+        produto = Produto.objects.filter(codigo_barras=codigo_barras).first()
 
     context = {
         'produto': produto,
-        'query': query,
+        # Devolvemos o que foi digitado para o campo não ficar em branco caso dê erro
+        'codigo_interno_digitado': codigo_interno,
+        'codigo_barras_digitado': codigo_barras,
         'nome_usuario': request.user.first_name or request.user.username,
     }
+    
     return render(request, 'estoque_item.html', context)
 
 @user_passes_test(acesso_estoque)

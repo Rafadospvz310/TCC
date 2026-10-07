@@ -27,6 +27,7 @@
         </header>
         <section class="card">
             <div class="grid-2">
+                <!-- COLUNA 1: IMAGEM (Design original mantido) -->
                 <div>
                     <h3 style="margin-bottom: 15px; color: var(--primary-blue);">Imagem do Produto</h3>
                     <div class="photo-box">
@@ -37,26 +38,45 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                <!-- COLUNA 2: DADOS DO PRODUTO E PESQUISA (Design original mantido) -->
                 <div>
                     <h2 style="font-size: 1.8rem; margin-bottom: 5px;">{{ produto.nome|default:"Nome do Produto" }}</h2>
                     <p style="color: var(--text-light); margin-bottom: 30px;">
                         Marca: <strong>{{ produto.fornecedor.nome|default:"-" }}</strong> &nbsp;|&nbsp; 
                         Categoria: <strong>{{ produto.categoria|default:"-" }}</strong>
                     </p>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Código Numérico Interno:</label>
-                            <input type="text" value="{% if produto %}#{{ produto.id }}{% endif %}" readonly style="background-color: var(--bg-color);">
+                    
+                    <!-- AQUI ENTRA O FORMULÁRIO DE PESQUISA -->
+                    <form method="GET" action="">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Código Numérico Interno:</label>
+                                <!-- Removi o readonly e mudei pra branco para indicar que é digitável -->
+                                <input type="text" name="codigo_interno" 
+                                       value="{% if produto %}#{{ produto.id }}{% else %}{{ codigo_interno_digitado }}{% endif %}" 
+                                       style="background-color: white;">
+                            </div>
+                            <div class="form-group">
+                                <label>Código de Barras:</label>
+                                <!-- Removi o readonly e mudei pra branco para indicar que é digitável -->
+                                <input type="text" name="codigo_barras" 
+                                       value="{% if produto %}{{ produto.codigo_barras|default:'' }}{% else %}{{ codigo_barras_digitado }}{% endif %}" 
+                                       style="background-color: white;">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Código de Barras:</label>
-                            <input type="text" value="{{ produto.codigo_barras|default:'' }}" readonly style="background-color: var(--bg-color);">
-                        </div>
-                    </div>
-                    <div style="background-color: var(--bg-color); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); margin-top: 15px;">
+                        
+                        <!-- Botão de buscar para acionar a pesquisa -->
+                        <button type="submit" class="btn btn-warning" style="margin-top: 5px; width: 100%; padding: 10px; cursor: pointer; font-weight: bold;">
+                            Buscar Produto
+                        </button>
+                    </form>
+
+                    <!-- BLOCOS DE PREÇO E ESTOQUE (Design original mantido) -->
+                    <div style="background-color: var(--bg-color); padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); margin-top: 20px;">
                         <div class="budget-widget" style="border-top-color: var(--secondary-blue); background: white;">
                             <h3>PREÇO DE VENDA</h3>
-                            <div class="value">R$ {{ produto.preco_custo|default:"0,00" }}</div>
+                            <div class="value">R$ {{ produto.preco_venda|default:"0,00" }}</div>
                         </div>
                         <div class="budget-widget" style="border-top-color: #10b981; margin-top: 20px; background: white;">
                             <h3>ESTOQUE ATUAL</h3>

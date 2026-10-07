@@ -77,10 +77,10 @@ WSGI_APPLICATION = 'setup.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': '',    
+        'NAME': 'projeto-tcc',    
         'USER': 'root',
-        'PASSWORD': '',
-        'HOST': '',  
+        'PASSWORD': 'Senha#123',
+        'HOST': '192.168.0.35',  
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
