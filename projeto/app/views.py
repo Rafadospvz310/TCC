@@ -72,14 +72,21 @@ def cadastro_fornecedor_view(request):
     
         if form.is_valid():
             form.save()
-            messages.success(request, 'Fornecedor cadastrado com sucesso!') # Corrigido 'menssages' para 'messages'
-            return redirect('app:compras')
+            messages.success(request, 'Fornecedor cadastrado com sucesso!')
+            return redirect('app:painel') # <-- Volta para o painel com sucesso
         else:
-            for field, errors in form.errors.items(): # Corrigido 'fields', 'erros.item()' para 'field', 'errors.items()'
+            for field, errors in form.errors.items():
                 for error in errors:
+                    # Cria a mensagem de erro vermelha
                     messages.error(request, f"Erro no campo '{field}': {error}")
+            
+            # <-- CRUCIAL: Mesmo dando erro, volta para o painel para mostrar as mensagens!
+            return redirect('app:painel') 
+            
     else:
         form = FornecedorCadastro()
+        # Se alguém tentar acessar a URL diretamente sem enviar dados, manda de volta pro painel
+        return redirect('app:painel')
 
 def listar_usuarios_view(request):
     return render(request, 'listar.html')

@@ -32,6 +32,17 @@
             </div>
         </header>
 
+        {% if messages %}
+            <div style="margin-bottom: 20px;">
+                {% for message in messages %}
+                    <div style="padding: 15px; border-radius: 5px; color: white; font-weight: bold; 
+                                background-color: {% if message.tags == 'error' %}#f44336{% else %}#4CAF50{% endif %};">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div class="grid-2">
             <section class="card">
                 <h2>Agenda de Pedidos aos Fornecedores</h2>
@@ -89,7 +100,7 @@
             </div>
             <div class="modal-body">
                 <!-- Mude a action para {% url 'app:painel' %} -->
-<form action="{% url 'app:painel' %}" method="POST">
+<form action="{% url 'app:cadastro_fornecedor' %}" method="POST">
     {% csrf_token %}
     <div class="form-group">
         <label>Nome da Empresa (Razão Social / Fantasia)</label>

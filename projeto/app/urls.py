@@ -30,6 +30,7 @@ urlpatterns = [
     
     path('painel_compras_view/', views.painel_compras_view, name='painel'),
     path('painel_compras_view/', views.painel_compras_view, name='compras'),
+    path('fornecedor/novo/', views.cadastro_fornecedor_view, name='cadastro_fornecedor'),
 
     path('login/', views.login_view, name='login'),
     

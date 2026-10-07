@@ -36,53 +36,52 @@ class FornecedorCadastro(forms.ModelForm):
         model = Fornecedor
         fields = ['nome', 'CNPJ', 'telefone', 'email', 'categorias']
 
-        def clean_CNPJ(self):
-            CNPJ = self.cleaned_data.get('CNPJ')
+    # A FUNÇÃO TEM DE ESTAR ALINHADA AQUI (na mesma linha do class Meta)
+    def clean_CNPJ(self):
+        CNPJ = self.cleaned_data.get('CNPJ')
 
-            # Se o campo for vazio, não faz validação aqui (deixa para o required=True do Django)
-            if not CNPJ:
-                return CNPJ
+        # Se o campo for vazio, não faz validação aqui
+        if not CNPJ:
+            return CNPJ
 
-            # Passo 0: Limpar caracteres e verificar o tamanho básico
-            CNPJ_limpo = ''.join(filter(str.isdigit, str(CNPJ)))
+        # Passo 0: Limpar caracteres e verificar o tamanho básico
+        CNPJ_limpo = ''.join(filter(str.isdigit, str(CNPJ)))
 
-            if len(CNPJ_limpo) != 14:
-                raise ValidationError("O CNPJ deve conter exatamente 14 números.")
+        if len(CNPJ_limpo) != 14:
+            raise ValidationError("O CNPJ deve conter exatamente 14 números.")
 
-            # Bloquear fraudes óbvias (14 números iguais repetidos)
-            if CNPJ_limpo in [str(i) * 14 for i in range(10)]:
-                raise ValidationError("CNPJ inválido (sequência repetida).")
+        # Bloquear fraudes óbvias (14 números iguais repetidos)
+        if CNPJ_limpo in [str(i) * 14 for i in range(10)]:
+            raise ValidationError("CNPJ inválido (sequência repetida).")
 
-            # Passo 1: Listas de pesos
-            pesos_primeiro = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-            pesos_segundo  = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+        # Passo 1: Listas de pesos
+        pesos_primeiro = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+        pesos_segundo  = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
 
-            # Separar a base (os 12 primeiros números)
-            cnpj_base = CNPJ_limpo[:12]
+        # Separar a base (os 12 primeiros números)
+        cnpj_base = CNPJ_limpo[:12]
 
-            # Passo 2: Calcular o Primeiro Dígito
-            # Multiplicamos cada número da base pelo seu peso correspondente e somamos tudo
-            soma_1 = sum(int(CNPJ_base[i]) * pesos_primeiro[i] for i in range(12))
-            resto_1 = soma_1 % 11
-            digito_1 = str(0 if resto_1 < 2 else 11 - resto_1)
+        # Passo 2: Calcular o Primeiro Dígito (Corrigido para cnpj_base em minúsculas)
+        soma_1 = sum(int(cnpj_base[i]) * pesos_primeiro[i] for i in range(12))
+        resto_1 = soma_1 % 11
+        digito_1 = str(0 if resto_1 < 2 else 11 - resto_1)
 
-            # Adicionamos o primeiro dígito calculado à nossa base
-            CNPJ_base += digito_1
+        # Adicionamos o primeiro dígito calculado à nossa base
+        cnpj_base += digito_1
 
-            # Passo 3: Calcular o Segundo Dígito (agora com 13 números)
-            soma_2 = sum(int(cnpj_base[i]) * pesos_segundo[i] for i in range(13))
-            resto_2 = soma_2 % 11
-            digito_2 = str(0 if resto_2 < 2 else 11 - resto_2)
+        # Passo 3: Calcular o Segundo Dígito
+        soma_2 = sum(int(cnpj_base[i]) * pesos_segundo[i] for i in range(13))
+        resto_2 = soma_2 % 11
+        digito_2 = str(0 if resto_2 < 2 else 11 - resto_2)
 
-            # Juntamos o último dígito para ter os 14 números matematicamente perfeitos
-            cnpj_calculado = cnpj_base + digito_2
+        # Juntamos o último dígito para ter os 14 números
+        cnpj_calculado = cnpj_base + digito_2
 
-            # Passo 4: O Veredicto
-            if CNPJ_limpo != cnpj_calculado:
-                raise ValidationError("CNPJ inválido. Os dígitos verificadores não conferem com a Receita Federal.")
+        # Passo 4: O Veredicto
+        if CNPJ_limpo != cnpj_calculado:
+            raise ValidationError("CNPJ inválido. Os dígitos verificadores não conferem com a Receita Federal.")
 
-            # Se passou por tudo sem dar erro, devolvemos o CNPJ limpo para ser salvo no MySQL
-            return CNPJ_limpo
+        return CNPJ_limpo
 
 class ProdutoCadastro(forms.ModelForm):
     class Meta:
