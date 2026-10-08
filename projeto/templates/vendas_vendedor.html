@@ -24,25 +24,67 @@
             </div>
         </header>
         <div class="grid-2">
+            
+            <!-- ========================================== -->
+            <!-- LADO ESQUERDO: PESQUISA DO PRODUTO -->
+            <!-- ========================================== -->
             <section class="card">
                 <h2>Consultar Produto</h2>
+                
                 <form action="{% url 'app:nova' %}" method="GET">
                     <div class="form-group">
                         <label>Código de Barras ou Nome:</label>
                         <div style="display: flex; gap: 10px;">
-                            <input type="text" name="busca_produto" placeholder="Ex: 789123456001" autofocus required>
+                            <input type="text" name="busca_produto" value="{{ busca_digitada }}" placeholder="Ex: 789123456001 ou Martelo" autofocus required>
                             <button type="submit" class="btn btn-primary">Buscar</button>
                         </div>
                     </div>
                 </form>
-                <div class="grid-2" style="margin-top: 20px;">
-                    <div class="photo-box sm"><span>Foto</span></div>
-                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; text-align: center; color: var(--text-light); display: flex; align-items: center; justify-content: center;">
-                        <p>Nenhum produto buscado ainda.</p>
-                    </div>
+
+                <div style="margin-top: 20px;">
+                    {% if produto %}
+                        <div class="grid-2">
+                            <div class="photo-box sm">
+                                {% if produto.foto %}
+                                    <img src="{{ produto.foto.url }}" alt="{{ produto.nome }}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                {% else %}
+                                    <span>Sem Foto</span>
+                                {% endif %}
+                            </div>
+                            <div style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px;">
+                                <h3 style="margin-bottom: 5px;">{{ produto.nome }}</h3>
+                                <p style="font-size: 0.9rem; color: var(--text-light);">Estoque: {{ produto.quantidade }} un</p>
+                                <h2 style="color: var(--primary-blue); margin: 10px 0;">R$ {{ produto.preco_venda }}</h2>
+                                
+                                <!-- MUDANÇA AQUI: Tiramos a tag <form> e colocamos IDs para o JavaScript ler -->
+                                <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
+                                    <input type="number" id="qtd-item" value="1" min="1" max="{{ produto.quantidade }}" style="width: 70px; padding: 5px;">
+                                    <!-- Ao clicar aqui, ele chama a função JS lá embaixo! -->
+                                    <button type="button" class="btn btn-warning" style="padding: 5px 15px;" 
+                                            onclick="adicionarAoCarrinho('{{ produto.id }}', '{{ produto.nome|escapejs }}', '{{ produto.preco_venda }}')">
+                                        Adicionar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% elif busca_digitada %}
+                        <div style="background: #fee2e2; border: 1px solid #f87171; padding: 20px; border-radius: 8px; text-align: center; color: #991b1b;">
+                            <p>Nenhum produto encontrado com "<strong>{{ busca_digitada }}</strong>".</p>
+                        </div>
+                    {% else %}
+                        <div class="grid-2">
+                            <div class="photo-box sm"><span>Foto</span></div>
+                            <div style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; text-align: center; color: var(--text-light); display: flex; align-items: center; justify-content: center;">
+                                <p>Pesquise um produto acima.</p>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </section>
             
+            <!-- ========================================== -->
+            <!-- LADO DIREITO: CARRINHO E FINALIZAÇÃO -->
+            <!-- ========================================== -->
             <section class="card">
                 <h2>Carrinho da Venda</h2>
                 <table>
@@ -51,21 +93,110 @@
                             <th>Produto</th>
                             <th>Qtd</th>
                             <th>Subtotal</th>
-                            <th></th>
+                            <th>Ação</th>
                         </tr>
                     </thead>
+                    <!-- O JavaScript vai jogar as linhas aqui dentro -->
                     <tbody id="carrinho-corpo"></tbody>
                 </table>
-                <div class="empty-table-msg">Carrinho vazio.</div>
+                <div class="empty-table-msg" id="msg-vazio">Carrinho vazio.</div>
                 
-                <form action="{% url 'app:nova' %}" method="POST" style="margin-top: 30px; border-top: 2px dashed var(--border-color); padding-top: 20px; text-align: right;">
+                <form id="form-finalizar" action="#" method="POST" style="margin-top: 30px; border-top: 2px dashed var(--border-color); padding-top: 20px;">
                     {% csrf_token %}
-                    <p style="color: var(--text-light); margin-bottom: 5px;">Total a Pagar</p>
-                    <h3 style="font-size: 2.5rem; color: var(--primary-blue);">R$ 0,00</h3>
-                    <button type="submit" class="btn btn-primary" style="margin-top: 20px; display: inline-block;" disabled>Finalizar e Enviar ao Caixa</button>
+                    
+                    <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                        <label style="font-weight: bold; color: var(--text-dark);">Forma de Pagamento:</label>
+                        <select name="metodo_pagamento" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background-color: var(--bg-color);">
+                            <option value="">Selecione o pagamento...</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="pix">PIX</option>
+                            <option value="credito">Cartão de Crédito</option>
+                            <option value="debito">Cartão de Débito</option>
+                        </select>
+                    </div>
+
+                    <div style="text-align: right;">
+                        <p style="color: var(--text-light); margin-bottom: 5px;">Total a Pagar</p>
+                        <!-- O JavaScript vai atualizar esse valor -->
+                        <h3 id="total-pagar" style="font-size: 2.5rem; color: var(--primary-blue);">R$ 0,00</h3>
+                        <button type="submit" id="btn-finalizar" class="btn btn-primary" style="margin-top: 20px; display: inline-block;" disabled>Finalizar e Enviar ao Caixa</button>
+                    </div>
                 </form>
             </section>
         </div>
     </main>
+
+    <!-- ========================================== -->
+    <!-- SCRIPT DO CARRINHO (A mágica acontece aqui) -->
+    <!-- ========================================== -->
+    <script>
+        let totalVenda = 0; // Guarda o total em dinheiro
+
+        function adicionarAoCarrinho(id, nome, precoStr) {
+        console.log("Adicionando: ", nome, " | Preço Original: ", precoStr);
+        
+            // Limpa o preço tirando pontos de milhar e trocando vírgula por ponto
+            let precoLimpo = precoStr.toString().replace(/\./g, '').replace(',', '.');
+            let preco = parseFloat(precoLimpo);
+            
+            let inputQtd = document.getElementById('qtd-item');
+            let qtd = parseInt(inputQtd.value);
+            
+            console.log("Preço final JS: ", preco, " | Qtd: ", qtd);
+
+            if (isNaN(preco)) {
+                alert("Erro ao ler o preço do produto. Verifique o formato no banco de dados.");
+                return;
+            }
+
+            let subtotal = preco * qtd;
+            totalVenda += subtotal;
+
+            let tbody = document.getElementById('carrinho-corpo');
+            let tr = document.createElement('tr');
+            
+            tr.innerHTML = `
+                <td>${nome}</td>
+                <td>${qtd}</td>
+                <td>R$ ${subtotal.toFixed(2).replace('.', ',')}</td>
+                <td>
+                    <button type="button" onclick="removerItem(this, ${subtotal})" style="color: white; background: red; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer;">X</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            document.getElementById('msg-vazio').style.display = 'none';
+            document.getElementById('btn-finalizar').disabled = false;
+            document.getElementById('total-pagar').innerText = 'R$ ' + totalVenda.toFixed(2).replace('.', ',');
+
+            let form = document.getElementById('form-finalizar');
+            form.insertAdjacentHTML('beforeend', `<input type="hidden" class="item-hidden" name="produtos_carrinho" value="${id}|${qtd}|${preco}">`);
+    }
+
+        function removerItem(botaoClicado, subtotalItem) {
+            // Acha a linha da tabela que o botão pertence e remove da tela
+            let linha = botaoClicado.parentNode.parentNode;
+            let index = Array.from(linha.parentNode.children).indexOf(linha);
+            linha.remove();
+            
+            // Remove o input invisível do formulário também
+            let hiddenInputs = document.querySelectorAll('.item-hidden');
+            if(hiddenInputs[index]) {
+                hiddenInputs[index].remove();
+            }
+
+            // Subtrai do valor total da venda
+            totalVenda -= subtotalItem;
+            // O Math.abs previne que fique R$ -0,00 por bugs de arredondamento
+            document.getElementById('total-pagar').innerText = 'R$ ' + Math.abs(totalVenda).toFixed(2).replace('.', ',');
+
+            // Se a tabela ficar vazia de novo, bloqueia o botão de finalizar
+            let tbody = document.getElementById('carrinho-corpo');
+            if (tbody.children.length === 0) {
+                document.getElementById('msg-vazio').style.display = 'block';
+                document.getElementById('btn-finalizar').disabled = true;
+            }
+        }
+    </script>
 </body>
 </html>

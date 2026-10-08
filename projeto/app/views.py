@@ -241,7 +241,27 @@ def gerar_etiquetas_view(request):
 
 @user_passes_test(acesso_vendas)
 def nova_venda_view(request):
-    return render(request, 'vendas_vendedor.html')
+    busca_produto = request.GET.get('busca_produto', '').strip()
+    produto = None
+
+    if busca_produto:
+        # 1. Se o que o usuário digitou for apenas números (Pode ser ID ou Código de Barras)
+        if busca_produto.isdigit():
+            produto = Produto.objects.filter(
+                Q(id=busca_produto) | Q(codigo_barras=busca_produto)
+            ).first()
+        
+        # 2. Se não achou por número, ou se o usuário digitou letras (ex: "Martelo"), busca por Nome
+        if not produto:
+            produto = Produto.objects.filter(nome__icontains=busca_produto).first()
+
+    context = {
+        'produto': produto,
+        'busca_digitada': busca_produto,
+        'nome_usuario': request.user.first_name if request.user.is_authenticated else "Vendedor"
+    }
+    
+    return render(request, 'vendas_vendedor.html', context)
 
 
 @user_passes_test(acesso_caixa)
