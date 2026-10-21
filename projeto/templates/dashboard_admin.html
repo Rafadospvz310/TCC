@@ -27,23 +27,76 @@
                 <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario|default:"Admin" }}</strong></p>
             </div>
         </header>
+
         <section class="card">
             <h2>Controle de Orçamento (Setor de Compras)</h2>
             <div class="grid-3" style="margin-top: 20px;">
-                <div class="budget-widget"><h3>Orçamento Definido</h3><div class="value">R$ 0,00</div></div>
-                <div class="budget-widget" style="border-top-color: #ef4444;"><h3>Total Gasto (Mês)</h3><div class="value" style="color: #ef4444;">R$ 0,00</div></div>
-                <div class="budget-widget" style="border-top-color: #10b981;"><h3>Saldo Disponível</h3><div class="value" style="color: #10b981;">R$ 0,00</div></div>
+                <div class="budget-widget">
+                    <h3>Orçamento Definido</h3>
+                    <div class="value">R$ {{ orcamento_definido|floatformat:2 }}</div>
+                </div>
+                <div class="budget-widget" style="border-top-color: #ef4444;">
+                    <h3>Estimativa de Compras (Estoque Baixo)</h3>
+                    <div class="value" style="color: #ef4444;">R$ {{ total_gasto|floatformat:2 }}</div>
+                </div>
+                <div class="budget-widget" style="border-top-color: #10b981;">
+                    <h3>Saldo Disponível</h3>
+                    <div class="value" style="color: #10b981;">R$ {{ saldo_disponivel|floatformat:2 }}</div>
+                </div>
             </div>
-            
-            
+
             <form action="{% url 'app:dashboard' %}" method="POST" style="margin-top: 30px; display: flex; gap: 15px; align-items: flex-end; max-width: 400px;">
                 {% csrf_token %}
                 <div class="form-group" style="margin-bottom: 0; flex-grow: 1;">
                     <label>Novo Orçamento Mensal (R$)</label>
-                    <input type="number" name="novo_orcamento" step="0.01" required>
+                    <input type="number" name="novo_orcamento" step="0.01" value="{{ orcamento_definido }}" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Atualizar</button>
             </form>
+        </section>
+
+        <!-- Tabela de Produtos que Necessitam de Compra -->
+        <section class="card" style="margin-top: 30px;">
+            <h2>Itens com Necessidade de Compra de Estoque</h2>
+            <p style="color: var(--text-light); margin-bottom: 15px; font-size: 0.9rem;">
+                Produtos com quantidade em estoque igual ou inferior a 10 unidades.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cód.</th>
+                        <th>Produto</th>
+                        <th>Fornecedor</th>
+                        <th>Qtd. Atual</th>
+                        <th>Preço de Custo</th>
+                        <th>Status do Orçamento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos_necessidade %}
+                        <tr>
+                            <td>#{{ produto.id }}</td>
+                            <td><strong>{{ produto.nome }}</strong></td>
+                            <td>{{ produto.fornecedor.nome|default:"-" }}</td>
+                            <td><span class="badge" style="background-color: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px;">{{ produto.quantidade }} UN</span></td>
+                            <td>R$ {{ produto.preco_custo }}</td>
+                            <td>
+                                {% if saldo_disponivel >= produto.preco_custo %}
+                                    <span style="color: #166534; font-weight: bold;">Compatível com o Orçamento</span>
+                                {% else %}
+                                    <span style="color: #991b1b; font-weight: bold;">Estoura o Orçamento</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-light);">
+                                Nenhum produto necessita de reposição no momento. O estoque está dentro das metas!
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </section>
     </main>
 </body>

@@ -1,7 +1,5 @@
 from django.urls import path
 from . import views
-from django.conf import settings
-from django.conf.urls.static import static
 
 app_name = 'app'
 
@@ -15,7 +13,7 @@ urlpatterns = [
     path('usuarios/editar/<int:id>/', views.editar_usuario_view, name='editar'),
     path('usuarios/deletar/<int:id>/', views.deletar_usuario_view, name='deletar'),
     
-    path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/', views.dashboard_admin_view, name='dashboard'),
     
     path('estoque/', views.controle_estoque_view, name='controle'),
     path('estoque/item/', views.detalhes_item_view, name='item'),
@@ -30,8 +28,8 @@ urlpatterns = [
     
     path('painel_compras_view/', views.painel_compras_view, name='painel'),
     path('painel_compras_view/', views.painel_compras_view, name='compras'),
-    path('fornecedor/novo/', views.cadastro_fornecedor_view, name='cadastro_fornecedor'),
+    path('fornecedor/cadastrar/', views.cadastro_fornecedor_view, name='cadastro_fornecedor'),
 
     path('login/', views.login_view, name='login'),
     
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]

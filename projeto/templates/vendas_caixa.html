@@ -24,31 +24,90 @@
                 <p style="color: var(--text-light); margin-top: 5px;">Olá, <strong>{{ nome_usuario|default:"Caixa" }}</strong></p>
             </div>
         </header>
+
+        {% if messages %}
+            <div style="margin-bottom: 20px;">
+                {% for message in messages %}
+                    <div style="padding: 12px; border-radius: 6px; background-color: #dbeafe; color: #1e40af; font-weight: 500;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div class="grid-2">
+            <!-- Coluna Esquerda: Bipar Itens e Listar Carrinho -->
             <section class="card">
                 <h2>Bipar Itens ou Pedido</h2>
-                <form action="{% url 'app:caixa' %}" method="GET">
+                <form action="{% url 'app:caixa' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="adicionar">
                     <div class="form-group">
-                        <input type="text" name="codigo_barras" placeholder="Aguardando leitor de código de barras..." autofocus style="font-size: 1.2rem; padding: 15px; border-color: var(--secondary-blue);">
+                        <input type="text" name="codigo_barras" placeholder="Aguardando leitor de código de barras..." autofocus required style="font-size: 1.2rem; padding: 15px; border-color: var(--secondary-blue);">
                     </div>
                 </form>
-                <div style="margin-top: 30px;">
-                    <h3 style="color: var(--text-light); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 15px;">Último Item Lido</h3>
-                    <div style="background: var(--bg-color); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 1.2rem; font-weight: 600; color: var(--text-light);">{{ ultimo_item_nome|default:"---" }}</span>
-                        <span style="font-size: 1.5rem; color: var(--text-light); font-weight: bold;">R$ {{ ultimo_item_preco|default:"0,00" }}</span>
+
+                <div style="margin-top: 20px;">
+                    <h3 style="color: var(--text-light); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px;">Último Item Lido</h3>
+                    <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-light);">{{ ultimo_item_nome|default:"---" }}</span>
+                        <span style="font-size: 1.3rem; color: var(--text-light); font-weight: bold;">R$ {{ ultimo_item_preco|floatformat:2 }}</span>
                     </div>
                 </div>
+
+                <!-- Tabela com Itens do Carrinho Atual -->
+                <div style="margin-top: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3>Itens no Carrinho</h3>
+                        {% if carrinho %}
+                            <form action="{% url 'app:caixa' %}" method="POST" style="margin: 0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="limpar">
+                                <button type="submit" style="background: none; border: none; color: #ef4444; font-weight: bold; cursor: pointer;">[ Limpar Carrinho ]</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                    
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 8px;">Produto</th>
+                                <th style="padding: 8px;">Qtd</th>
+                                <th style="padding: 8px;">Preço</th>
+                                <th style="padding: 8px;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in carrinho %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px;"><strong>{{ item.nome }}</strong></td>
+                                    <td style="padding: 8px;">{{ item.quantidade }}</td>
+                                    <td style="padding: 8px;">R$ {{ item.preco|floatformat:2 }}</td>
+                                    <td style="padding: 8px;">R$ {{ item.subtotal|floatformat:2 }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 20px; color: var(--text-light);">
+                                        Passe um produto pelo leitor para começar a venda.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </section>
+
+            <!-- Coluna Direita: Resumo e Pagamento -->
             <section class="card" style="background-color: var(--bg-color);">
                 <h2>Resumo e Pagamento</h2>
                 <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 1px solid var(--border-color);">
                     <p style="color: var(--text-light); margin-bottom: 5px;">Total da Compra</p>
-                    <div style="font-size: 3rem; font-weight: bold; color: var(--primary-blue);">R$ {{ total_compra|default:"0,00" }}</div>
+                    <div style="font-size: 3rem; font-weight: bold; color: var(--primary-blue);">R$ {{ total_compra|floatformat:2 }}</div>
                 </div>
                 
                 <form action="{% url 'app:caixa' %}" method="POST">
                     {% csrf_token %}
+                    <input type="hidden" name="acao" value="finalizar">
                     <div class="form-group">
                         <label>Forma de Pagamento</label>
                         <select name="forma_pagamento" style="font-size: 1.1rem; padding: 12px;" required>

@@ -26,21 +26,31 @@
         </div>
     </header>
 
-    <!-- Cards de Resumo -->
-    <div class="grid-3" style="margin-bottom: 30px;">
-        <div class="budget-widget" style="border-top-color: var(--secondary-blue);">
-            <h3>Tipos de Produtos Cadastrados</h3>
-            <div class="value">{{ total_tipos }}</div>
-        </div>
-        <div class="budget-widget" style="border-top-color: #10b981;">
-            <h3>Total de Itens Físicos (Unidades)</h3>
-            <div class="value" style="color: #10b981;">{{ total_unidades }}</div>
-        </div>
-        <div class="budget-widget" style="border-top-color: var(--primary-yellow);">
-            <h3>Valor Total em Estoque</h3>
-            <div class="value" style="color: var(--primary-yellow);">R$ {{ valor_total|floatformat:2 }}</div>
+    <div class="grid-3" style="margin-bottom: 25px;">
+    <!-- Card 1: Tipos de Produtos -->
+    <div class="card" style="border-top: 4px solid #2563eb; text-align: center;">
+        <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase;">Tipos de Produtos Cadastrados</h3>
+        <div style="font-size: 1.8rem; font-weight: bold; color: #1e293b; margin-top: 8px;">
+            {{ total_tipos }}
         </div>
     </div>
+
+    <!-- Card 2: Total de Itens Físicos -->
+    <div class="card" style="border-top: 4px solid #10b981; text-align: center;">
+        <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase;">Total de Itens Físicos (Unidades)</h3>
+        <div style="font-size: 1.8rem; font-weight: bold; color: #1e293b; margin-top: 8px;">
+            {{ total_itens_fisicos }}
+        </div>
+    </div>
+
+    <!-- Card 3: Valor Total em Estoque -->
+    <div class="card" style="border-top: 4px solid #f59e0b; text-align: center;">
+        <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase;">Valor Total em Estoque</h3>
+        <div style="font-size: 1.8rem; font-weight: bold; color: #f59e0b; margin-top: 8px;">
+            R$ {{ valor_total_estoque|floatformat:2 }}
+        </div>
+    </div>
+</div>
 
     <!-- Tabela de Inventário -->
     <section class="card">

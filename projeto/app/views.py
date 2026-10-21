@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from .forms import UsuarioCadastroForm, FornecedorCadastro, ProdutoCadastro
 from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda
 from django.db.models import Sum, F, Q
-
 
 # Obtém o modelo de usuário ativo (accounts.Usuario)
 Usuario = get_user_model()
@@ -66,6 +65,7 @@ def cadastro_view(request):
 
     return render(request, 'cadastro.html', {'form': form})
 
+
 def cadastro_fornecedor_view(request):
     if request.method == 'POST':
         form = FornecedorCadastro(request.POST)
@@ -73,20 +73,16 @@ def cadastro_fornecedor_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Fornecedor cadastrado com sucesso!')
-            return redirect('app:painel') # <-- Volta para o painel com sucesso
+            return redirect('app:painel')
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    # Cria a mensagem de erro vermelha
                     messages.error(request, f"Erro no campo '{field}': {error}")
-            
-            # <-- CRUCIAL: Mesmo dando erro, volta para o painel para mostrar as mensagens!
             return redirect('app:painel') 
-            
     else:
         form = FornecedorCadastro()
-        # Se alguém tentar acessar a URL diretamente sem enviar dados, manda de volta pro painel
         return redirect('app:painel')
+
 
 def listar_usuarios_view(request):
     return render(request, 'listar.html')
@@ -100,58 +96,72 @@ def deletar_usuario_view(request, id=None):
     return render(request, 'confirmar_delecao.html')
 
 
-def dashboard_view(request):
-    return render(request, 'dashboard_admin.html')
+@login_required
+def dashboard_admin_view(request):
+    # Atualização do orçamento mensal via formulário POST
+    if request.method == 'POST' and 'novo_orcamento' in request.POST:
+        try:
+            novo_orcamento = float(request.POST.get('novo_orcamento', 0))
+            request.session['orcamento_mensal'] = novo_orcamento
+            messages.success(request, 'Orçamento mensal atualizado com sucesso!')
+        except ValueError:
+            messages.error(request, 'Valor inválido para o orçamento.')
+        return redirect('app:dashboard')
+
+    # Recupera o orçamento da sessão (padrão: R$ 10.000,00)
+    orcamento_definido = request.session.get('orcamento_mensal', 10000.00)
+
+    # Considera produtos com estoque baixo (<= 10 unidades)
+    LIMITE_ESTOQUE_BAIXO = 10
+    produtos_para_comprar = Produto.objects.filter(quantidade__lte=LIMITE_ESTOQUE_BAIXO).order_by('quantidade')
+
+    # Cálculo da necessidade de compra para repor estoque até 20 unidades
+    ESTOQUE_DESEJADO = 20
+    total_necessidade_compra = sum(
+        (ESTOQUE_DESEJADO - p.quantidade) * float(p.preco_custo or 0) 
+        for p in produtos_para_comprar if p.quantidade < ESTOQUE_DESEJADO
+    )
+
+    saldo_disponivel = orcamento_definido - total_necessidade_compra
+
+    context = {
+        'orcamento_definido': orcamento_definido,
+        'total_gasto': total_necessidade_compra,
+        'saldo_disponivel': saldo_disponivel,
+        'produtos_necessidade': produtos_para_comprar,
+        'nome_usuario': request.user.first_name or request.user.username,
+    }
+    return render(request, 'dashboard_admin.html', context)
 
 
 @user_passes_test(acesso_estoque)
 def controle_estoque_view(request):
-    # Busca todos os produtos gravados no MySQL ordenados pelos mais recentes
-    produtos = Produto.objects.all().order_by('-id')
-
-    # Métricas gerais dos cards de resumo
-    total_tipos = produtos.count()
-    total_unidades = produtos.aggregate(Sum('quantidade'))['quantidade__sum'] or 0
+    busca = request.GET.get('busca', '').strip()
     
-    # Calcula o valor total em estoque (preco_custo * quantidade)
-    valor_total = sum(p.preco_custo * p.quantidade for p in produtos)
+    if busca:
+        produtos = Produto.objects.filter(
+            Q(nome__icontains=busca) | Q(codigo_barras__icontains=busca) | Q(id__icontains=busca)
+        ).order_by('-id')
+    else:
+        produtos = Produto.objects.all().order_by('-id')
+
+    # Cálculos para os cards superiores
+    total_tipos = Produto.objects.count()
+    total_itens_fisicos = Produto.objects.aggregate(total=Sum('quantidade'))['total'] or 0
+    valor_total_estoque = Produto.objects.aggregate(
+        total=Sum(F('preco_custo') * F('quantidade'))
+    )['total'] or 0.0
 
     context = {
         'produtos': produtos,
+        'busca': busca,
         'total_tipos': total_tipos,
-        'total_unidades': total_unidades,
-        'valor_total': valor_total,
+        'total_itens_fisicos': total_itens_fisicos,
+        'valor_total_estoque': valor_total_estoque,
         'nome_usuario': request.user.first_name or request.user.username,
     }
     return render(request, 'estoque_controle.html', context)
 
-
-@user_passes_test(acesso_estoque)
-def detalhes_item_view(request, produto_id=None):
-    produto = None
-    
-    codigo_interno = request.GET.get('codigo_interno', '').strip()
-    codigo_barras = request.GET.get('codigo_barras', '').strip()
-
-    if produto_id:
-        produto = get_object_or_404(Produto, id=produto_id)
-        
-    elif codigo_interno:
-        busca_id = codigo_interno.replace('#', '')
-        if busca_id.isdigit():
-            produto = Produto.objects.filter(id=busca_id).first()
-            
-    elif codigo_barras:
-        produto = Produto.objects.filter(codigo_barras=codigo_barras).first()
-
-    context = {
-        'produto': produto,
-        'codigo_interno_digitado': codigo_interno,
-        'codigo_barras_digitado': codigo_barras,
-        'nome_usuario': request.user.first_name or request.user.username,
-    }
-    
-    return render(request, 'estoque_item.html', context)
 
 @user_passes_test(acesso_estoque)
 def deletar_produto_view(request, produto_id):
@@ -162,45 +172,60 @@ def deletar_produto_view(request, produto_id):
         messages.success(request, f'Produto "{nome_produto}" removido com sucesso!')
     return redirect('app:controle')
 
+
 @user_passes_test(acesso_estoque)
 def consultar_item_view(request, produto_id=None):
     produto = None
-    
-    # Em vez de 'q', nós capturamos os dois campos do HTML
     codigo_interno = request.GET.get('codigo_interno', '').strip()
     codigo_barras = request.GET.get('codigo_barras', '').strip()
 
-    # 1. Mantém a sua lógica original: Se vier um ID direto pela URL
     if produto_id:
         produto = get_object_or_404(Produto, id=produto_id)
-        
-    # 2. Se o usuário digitou no campo de Código Numérico Interno
     elif codigo_interno:
-        busca_id = codigo_interno.replace('#', '') # Remove a '#' se ele digitar
+        busca_id = codigo_interno.replace('#', '')
         if busca_id.isdigit():
             produto = Produto.objects.filter(id=busca_id).first()
-            
-    # 3. Se o usuário digitou no campo de Código de Barras
     elif codigo_barras:
         produto = Produto.objects.filter(codigo_barras=codigo_barras).first()
 
     context = {
         'produto': produto,
-        # Devolvemos o que foi digitado para o campo não ficar em branco caso dê erro
         'codigo_interno_digitado': codigo_interno,
         'codigo_barras_digitado': codigo_barras,
         'nome_usuario': request.user.first_name or request.user.username,
     }
-    
+    return render(request, 'estoque_item.html', context)
+
+@user_passes_test(acesso_estoque)
+def detalhes_item_view(request, produto_id=None):
+    produto = None
+    codigo_interno = request.GET.get('codigo_interno', '').strip()
+    codigo_barras = request.GET.get('codigo_barras', '').strip()
+
+    if produto_id:
+        produto = get_object_or_404(Produto, id=produto_id)
+    elif codigo_interno:
+        busca_id = codigo_interno.replace('#', '')
+        if busca_id.isdigit():
+            produto = Produto.objects.filter(id=busca_id).first()
+    elif codigo_barras:
+        produto = Produto.objects.filter(codigo_barras=codigo_barras).first()
+
+    context = {
+        'produto': produto,
+        'codigo_interno_digitado': codigo_interno,
+        'codigo_barras_digitado': codigo_barras,
+        'nome_usuario': request.user.first_name or request.user.username,
+    }
     return render(request, 'estoque_item.html', context)
 
 @user_passes_test(acesso_estoque)
 def etiquetas_view(request):
-    return render(request, 'estoque_etiquetas.html')
+    return redirect('app:gerar_etiquetas')
+
 
 @user_passes_test(acesso_estoque)
 def gerar_etiquetas_view(request):
-    # Consulta direta sem filtros para garantir que traz a QuerySet
     todos_produtos = Produto.objects.all().order_by('-id')
 
     produto = None
@@ -208,7 +233,6 @@ def gerar_etiquetas_view(request):
     busca = request.GET.get('busca_etiqueta', '').strip()
     qtd_etiquetas = int(request.POST.get('qtd_etiquetas', 1)) if request.method == 'POST' else 1
 
-    # Se houve filtro por texto
     if busca:
         if busca.isdigit():
             todos_produtos = Produto.objects.filter(
@@ -219,7 +243,6 @@ def gerar_etiquetas_view(request):
                 Q(nome__icontains=busca) | Q(codigo_barras__icontains=busca)
             ).order_by('-id')
 
-    # Seleção do produto
     if produto_id:
         produto = Produto.objects.filter(id=produto_id).first()
     elif todos_produtos.exists():
@@ -239,19 +262,18 @@ def gerar_etiquetas_view(request):
     }
     return render(request, 'estoque_etiquetas.html', context)
 
+
 @user_passes_test(acesso_vendas)
 def nova_venda_view(request):
     busca_produto = request.GET.get('busca_produto', '').strip()
     produto = None
 
     if busca_produto:
-        # 1. Se o que o usuário digitou for apenas números (Pode ser ID ou Código de Barras)
         if busca_produto.isdigit():
             produto = Produto.objects.filter(
                 Q(id=busca_produto) | Q(codigo_barras=busca_produto)
             ).first()
         
-        # 2. Se não achou por número, ou se o usuário digitou letras (ex: "Martelo"), busca por Nome
         if not produto:
             produto = Produto.objects.filter(nome__icontains=busca_produto).first()
 
@@ -260,13 +282,129 @@ def nova_venda_view(request):
         'busca_digitada': busca_produto,
         'nome_usuario': request.user.first_name if request.user.is_authenticated else "Vendedor"
     }
-    
     return render(request, 'vendas_vendedor.html', context)
 
 
 @user_passes_test(acesso_caixa)
 def caixa_pdv_view(request):
-    return render(request, 'vendas_caixa.html')
+    carrinho = request.session.get('carrinho', [])
+    ultimo_item_nome = request.session.get('ultimo_item_nome', '---')
+    ultimo_item_preco = request.session.get('ultimo_item_preco', 0.0)
+
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+
+        # 1. Adicionar item lido pelo leitor
+        if acao == 'adicionar':
+            codigo_barras = request.POST.get('codigo_barras', '').strip()
+            if codigo_barras:
+                produto = None
+                if codigo_barras.isdigit():
+                    produto = Produto.objects.filter(
+                        Q(codigo_barras=codigo_barras) | Q(id=codigo_barras)
+                    ).first()
+                if not produto:
+                    produto = Produto.objects.filter(nome__icontains=codigo_barras).first()
+
+                if produto:
+                    if produto.quantidade > 0:
+                        preco_item = float(produto.preco_custo or 0)
+                        
+                        # Verifica se o produto já existe no carrinho para apenas incrementar a quantidade
+                        item_existente = next((item for item in carrinho if item['produto_id'] == produto.id), None)
+                        if item_existente:
+                            item_existente['quantidade'] += 1
+                            item_existente['subtotal'] = item_existente['quantidade'] * preco_item
+                        else:
+                            carrinho.append({
+                                'produto_id': produto.id,
+                                'nome': produto.nome,
+                                'preco': preco_item,
+                                'quantidade': 1,
+                                'subtotal': preco_item
+                            })
+
+                        request.session['carrinho'] = carrinho
+                        request.session['ultimo_item_nome'] = produto.nome
+                        request.session['ultimo_item_preco'] = preco_item
+                        messages.success(request, f'Item "{produto.nome}" adicionado!')
+                    else:
+                        messages.error(request, f'Produto "{produto.nome}" está sem estoque!')
+                else:
+                    messages.error(request, 'Produto não encontrado.')
+
+            return redirect('app:caixa')
+
+        # 2. Limpar o carrinho inteiro
+        elif acao == 'limpar':
+            request.session['carrinho'] = []
+            request.session['ultimo_item_nome'] = '---'
+            request.session['ultimo_item_preco'] = 0.0
+            messages.info(request, 'Carrinho esvaziado.')
+            return redirect('app:caixa')
+
+        # 3. Finalizar e dar baixa no estoque
+        elif acao == 'finalizar':
+            forma_pagamento = request.POST.get('forma_pagamento')
+            valor_recebido = request.POST.get('valor_recebido')
+            total_compra = sum(item['subtotal'] for item in carrinho)
+
+            if not carrinho:
+                messages.error(request, 'Não há itens na venda atual!')
+                return redirect('app:caixa')
+
+            if valor_recebido:
+                try:
+                    valor_recebido = float(valor_recebido)
+                    if valor_recebido < total_compra:
+                        messages.error(request, f'Valor recebido (R$ {valor_recebido:.2f}) é menor que o total da compra (R$ {total_compra:.2f})!')
+                        return redirect('app:caixa')
+                except ValueError:
+                    pass
+
+            try:
+                with transaction.atomic():
+                    venda = Venda.objects.create(
+                        vendedor=request.user,
+                        valor_total=total_compra
+                    )
+
+                    for item in carrinho:
+                        prod = Produto.objects.get(id=item['produto_id'])
+                        ItemVenda.objects.create(
+                            venda=venda,
+                            produto=prod,
+                            quantidade=item['quantidade'],
+                            preco_unitario=item['preco']
+                        )
+                        prod.quantidade -= item['quantidade']
+                        prod.save()
+
+                    request.session['carrinho'] = []
+                    request.session['ultimo_item_nome'] = '---'
+                    request.session['ultimo_item_preco'] = 0.0
+
+                    troco = (float(valor_recebido) - total_compra) if valor_recebido else 0.0
+                    if troco > 0:
+                        messages.success(request, f'Venda #{venda.id} finalizada com sucesso! Troco: R$ {troco:.2f}')
+                    else:
+                        messages.success(request, f'Venda #{venda.id} finalizada com sucesso!')
+
+            except Exception as e:
+                messages.error(request, f'Erro ao registrar a venda: {str(e)}')
+
+            return redirect('app:caixa')
+
+    total_compra = sum(item['subtotal'] for item in carrinho)
+
+    context = {
+        'carrinho': carrinho,
+        'total_compra': total_compra,
+        'ultimo_item_nome': ultimo_item_nome,
+        'ultimo_item_preco': ultimo_item_preco,
+        'nome_usuario': request.user.first_name or request.user.username,
+    }
+    return render(request, 'vendas_caixa.html', context)
 
 
 @user_passes_test(acesso_caixa)
@@ -277,9 +415,7 @@ def relatorio_vendas_view(request):
 @user_passes_test(acesso_compras)
 def painel_compras_view(request):
     if request.method == 'POST':
-        # Identifica se a requisição veio do formulário de Produto ou de Fornecedor
         if 'nome_produto' in request.POST:
-            # Mapeia os inputs do HTML para o formulário do Django
             dados_produto = {
                 'nome': request.POST.get('nome_produto'),
                 'fornecedor': request.POST.get('fornecedor_id'),
@@ -309,14 +445,10 @@ def painel_compras_view(request):
                         messages.error(request, f"Erro no campo '{field}': {error}")
             return redirect('app:painel')
 
-    # Busca a lista de fornecedores cadastrados para popular os selects do HTML
     lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
 
     context = {
         'fornecedores': lista_de_fornecedores,
         'nome_usuario': request.user.first_name or request.user.username,
     }
-
     return render(request, 'compras.html', context)
-
-    
