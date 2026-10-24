@@ -5,6 +5,8 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 from .forms import UsuarioCadastroForm, FornecedorCadastro, ProdutoCadastro
 from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda
 from django.db.models import Sum, F, Q
+from django.utils import timezone
+from datetime import datetime
 
 # Obtém o modelo de usuário ativo (accounts.Usuario)
 Usuario = get_user_model()
@@ -409,7 +411,73 @@ def caixa_pdv_view(request):
 
 @user_passes_test(acesso_caixa)
 def relatorio_vendas_view(request):
-    return render(request, 'caixa_relatorio.html')
+    if request.method == 'POST':
+        messages.success(request, 'Turno do caixa encerrado e relatório gerado com sucesso!')
+        return redirect('app:relatorio')
+
+    hoje = timezone.now().date()
+    
+    # 1. Histórico de Vendas do dia atual
+    vendas_hoje = Venda.objects.filter(data_venda__date=hoje).order_by('-data_venda') if hasattr(Venda, 'data_venda') else Venda.objects.all().order_by('-id')
+
+    total_dinheiro = 0.0
+    total_cartao_pix = 0.0
+
+    for venda in vendas_hoje:
+        valor = float(venda.valor_total or 0)
+        forma = str(getattr(venda, 'forma_pagamento', '') or '').lower()
+        if 'dinheiro' in forma:
+            total_dinheiro += valor
+        else:
+            total_cartao_pix += valor
+
+    total_geral = total_dinheiro + total_cartao_pix
+
+    # 2. Lógica de Comparação entre dois dias
+    data_1_str = request.GET.get('data_1', '')
+    data_2_str = request.GET.get('data_2', '')
+    total_dia_1 = 0.0
+    total_dia_2 = 0.0
+    diferenca_valor = 0.0
+    percentual_crescimento = 0.0
+
+    if data_1_str and data_2_str:
+        try:
+            d1 = datetime.strptime(data_1_str, '%Y-%m-%d').date()
+            d2 = datetime.strptime(data_2_str, '%Y-%m-%d').date()
+
+            # Soma das vendas do Dia 1
+            vendas_d1 = Venda.objects.filter(data_venda__date=d1) if hasattr(Venda, 'data_venda') else []
+            total_dia_1 = sum(float(v.valor_total or 0) for v in vendas_d1)
+
+            # Soma das vendas do Dia 2
+            vendas_d2 = Venda.objects.filter(data_venda__date=d2) if hasattr(Venda, 'data_venda') else []
+            total_dia_2 = sum(float(v.valor_total or 0) for v in vendas_d2)
+
+            diferenca_valor = total_dia_2 - total_dia_1
+            
+            if total_dia_1 > 0:
+                percentual_crescimento = (diferenca_valor / total_dia_1) * 100
+            elif total_dia_2 > 0:
+                percentual_crescimento = 100.0
+        except ValueError:
+            pass
+
+    context = {
+        'vendas': vendas_hoje,
+        'total_dinheiro': total_dinheiro,
+        'total_cartao_pix': total_cartao_pix,
+        'total_geral': total_geral,
+        # Variáveis de comparação
+        'data_1': data_1_str,
+        'data_2': data_2_str,
+        'total_dia_1': total_dia_1,
+        'total_dia_2': total_dia_2,
+        'diferenca_valor': diferenca_valor,
+        'percentual_crescimento': percentual_crescimento,
+        'nome_usuario': request.user.first_name or request.user.username,
+    }
+    return render(request, 'caixa_relatorio.html', context)
 
 
 @user_passes_test(acesso_compras)
