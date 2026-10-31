@@ -114,7 +114,7 @@
             
             <form action="{% url 'app:relatorio' %}" method="POST" style="margin-top: 30px; text-align: right;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Encerrar Turno e Imprimir Relatório</button>
+                <button type="submit" class="btn btn-danger" onclick="window.print();">Encerrar Turno e Imprimir Relatório</button>
             </form>
         </section>
     </main>

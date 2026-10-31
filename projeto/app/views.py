@@ -7,6 +7,7 @@ from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda
 from django.db.models import Sum, F, Q
 from django.utils import timezone
 from datetime import datetime
+from django.db import transaction
 
 # Obtém o modelo de usuário ativo (accounts.Usuario)
 Usuario = get_user_model()
@@ -366,9 +367,11 @@ def caixa_pdv_view(request):
 
             try:
                 with transaction.atomic():
+                    # Cria a venda com os campos corretos agora suportados pelo modelo
                     venda = Venda.objects.create(
-                        vendedor=request.user,
-                        valor_total=total_compra
+                        vendedor=request.user if request.user.is_authenticated else None,
+                        valor_total=total_compra,
+                        forma_pagamento=forma_pagamento
                     )
 
                     for item in carrinho:

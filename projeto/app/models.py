@@ -49,17 +49,25 @@ class Cliente(models.Model):
         db_table = 'clientes'
 
 
+from django.conf import settings  # Certifique-se de que esta importação está no topo do models.py
+
+# ... (outros modelos)
+
 class Venda(models.Model):
-    data = models.DateTimeField(auto_now_add=True)
+    data_venda = models.DateTimeField(auto_now_add=True)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    forma_pagamento = models.CharField(max_length=50, blank=True, null=True)
+    vendedor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'vendas'
 
 
 class ItemVenda(models.Model):
-    venda = models.ForeignKey(Venda, on_delete=models.CASCADE)
+    venda = models.ForeignKey(Venda, on_delete=models.CASCADE, related_name='itens')
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     quantidade = models.IntegerField(default=1)
+    preco_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Adicionado para guardar o preço no momento da venda
 
     class Meta:
         db_table = 'itens_venda'
