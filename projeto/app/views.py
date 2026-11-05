@@ -486,6 +486,7 @@ def relatorio_vendas_view(request):
 @user_passes_test(acesso_compras)
 def painel_compras_view(request):
     if request.method == 'POST':
+        # 1. Cadastro de Novo Produto/Compra
         if 'nome_produto' in request.POST:
             dados_produto = {
                 'nome': request.POST.get('nome_produto'),
@@ -505,6 +506,7 @@ def painel_compras_view(request):
                         messages.error(request, f"Erro no campo '{field}': {error}")
             return redirect('app:painel')
 
+        # 2. Cadastro de Fornecedor
         elif 'nome' in request.POST:
             form_fornecedor = FornecedorCadastro(request.POST)
             if form_fornecedor.is_valid():
@@ -515,6 +517,50 @@ def painel_compras_view(request):
                     for error in errors:
                         messages.error(request, f"Erro no campo '{field}': {error}")
             return redirect('app:painel')
+
+        # 3. Modificação de Preço com Tributação Brasileira (Markup + Impostos)
+        elif 'produto_id' in request.POST and 'calc_markup' in request.POST:
+            try:
+                produto_id = request.POST.get('produto_id')
+                produto = get_object_or_404(Produto, id=produto_id)
+                
+                custo = float(request.POST.get('calc_custo', 0) or 0)
+                frete = float(request.POST.get('calc_frete', 0) or 0)
+                ipi = float(request.POST.get('calc_ipi', 0) or 0)
+                icms = float(request.POST.get('calc_icms', 0) or 0)
+                pis = float(request.POST.get('calc_pis', 0) or 0)
+                cofins = float(request.POST.get('calc_cofins', 0) or 0)
+                iss = float(request.POST.get('calc_iss', 0) or 0)
+                markup = float(request.POST.get('calc_markup', 0) or 0)
+                
+                # Legislação Brasileira: Custo Efetivo + Tributação "por dentro"
+                custo_efetivo = custo + frete + (custo * (ipi / 100))
+                total_impostos = (icms + pis + cofins + iss) / 100
+                if total_impostos >= 1:
+                    total_impostos = 0.99
+                
+                preco_base_tributado = custo_efetivo / (1 - total_impostos)
+                preco_final = preco_base_tributado * (1 + (markup / 100))
+                
+                # Salva os novos valores no banco de dados
+                produto.preco_custo = custo
+                produto.preco_venda = round(preco_final, 2)
+                produto.save()
+                
+                messages.success(request, f'Preço do produto "{produto.nome}" atualizado com sucesso para R$ {produto.preco_venda:.2f}!')
+            except Exception as e:
+                messages.error(request, f'Erro ao atualizar preço: {str(e)}')
+            return redirect('app:painel')
+
+    lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
+    lista_de_produtos = Produto.objects.all().order_by('nome') # <-- Necessário para o select do modal
+
+    context = {
+        'fornecedores': lista_de_fornecedores,
+        'produtos': lista_de_produtos,
+        'nome_usuario': request.user.first_name or request.user.username,
+    }
+    return render(request, 'compras.html', context)
 
     lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
 
