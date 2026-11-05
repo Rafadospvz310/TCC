@@ -1,0 +1,355 @@
+Fluxo de Eventos 2
+
+==== ESTOQUE ====
+
+CU01 – FAZER LOGIN
+
+Fluxo Principal:
+
+1. O Usuário clica em "Login".
+2. O Sistema exibe os campos e-mail e senha.
+3. O Usuário preenche os campos.
+4. O Sistema valida os dados e libera o acesso.
+
+Fluxo Alternativo A1:
+
+1. No passo 2, o usuário clica em "Esqueci minha senha".
+2. O Sistema exibe um campo de e-mail.
+3. O Usuário preenche o campo.
+4. O Sistema envia um código de verificação para o e-mail solicitado.
+5. O Usuário confirma o código que recebeu no e-mail.
+6. O Sistema exibe campos de "Nova Senha" e "Confirmar nova Senha".
+7. O Usuário preenche os campos.
+8. O Sistema valida os dados e atualiza a senha.
+9. Volta para o passo 2 do Fluxo Principal.
+
+Fluxo Alternativo de Exceção AE1:
+
+1. No passo 3, o e-mail inserido é inválido.
+2. O Sistema enviará uma mensagem de erro.
+3. Volta ao passo 2 do Fluxo Alternativo.
+
+Fluxo Alternativo de Exceção AE2:
+
+1. No passo 5, o código inserido é inválido.
+2. O Sistema enviará uma mensagem de erro.
+3. Volta ao passo 5 do Fluxo Alternativo.
+
+Fluxo Alternativo de Exceção AE3:
+
+1. No passo 7, a senha inserida é a mesma que a anterior.
+2. O Sistema enviará uma mensagem de erro.
+3. Volta ao passo 6 do Fluxo Alternativo.
+
+Fluxo de Exceção E1:
+
+1. No passo 4, os dados são inválidos.
+2. O Sistema enviará uma mensagem de erro.
+3. Volta ao passo 2 do Fluxo Principal.
+
+Fluxo de Exceção E2:
+
+1. No passo 4, é a terceira tentativa de acesso mal sucedida consecutiva.
+2. O Sistema enviará uma mensagem de erro.
+3. Volta ao passo 2 do Fluxo Principal com um bloqueio temporário.
+
+CU02 – CONSULTAR INFORMAÇÕES DO ESTOQUE
+
+Fluxo Principal:
+
+1. O Usuário acessa o painel de estoque.
+2. O Sistema mostra a quantidade de produtos.
+3. O Sistema informa a quantidade de itens faltando e/ou sobrando.
+
+Fluxo Alternativo A1: 
+
+1. No passo 2, o Sistema identifica que um item está abaixo do mínimo.
+2. O Sistema exibe alerta de criticidade.
+
+Fluxo Alternativo A2:
+
+1. No passo 2, o Sistema identifica um excesso de estoque.
+2. O Sistema exibe alerta de sobrecarga.
+
+CU03 – CONTROLAR ESTOQUE
+
+Fluxo Principal:
+
+1. O Usuário acessa o menu de estoque.
+2. Seleciona um item.
+3. Escolhe se quer adicionar ou retirar.
+4. Informa a quantidade.
+5. Informa o motivo da movimentação.
+6. O Usuário clica em "Confirmar".
+7. O Sistema atualiza as informações do estoque.
+8. O Sistema registra usuário, data/hora e motivo.
+9. O Sistema confirma a operação.
+
+Fluxo de Exceção E1:
+
+1. No passo 6, o Usuário retira uma quantidade maior do que tem no estoque.
+2. O Sistema emite uma mensagem de erro.
+3. Volta ao passo 4 do Fluxo Principal.
+
+Fluxo de Exceção E2:
+
+1. No passo 6, o Usuário não informou o motivo de movimentação
+2. O Sistema emite uma mensagem de erro.
+3. Volta ao passo 4 do Fluxo Principal.
+
+CU04 – CONSULTAR NOTAS FISCAIS
+
+Fluxo Principal:
+
+1. O Usuário solicita relatório.
+2. O Sistema busca notas liberadas.
+3. O Sistema gera e disponibiliza o relatório.
+
+Fluxo de Exceção:
+1. No passo 2, não há notas liberadas.
+2. O Sistema apresenta uma mensagem de erro.
+3. Volta ao passo 1 do Fluxo Principal.
+
+CU05 – EMITIR ETIQUETAS
+
+Fluxo Principal:
+
+1. O Usuário seleciona nota fiscal.
+2. O Sistema gera etiquetas.
+3. Exibe código de item, valor, nome, especificações, preço e quantidade disponível.
+4. O Sistema gera automaticamente o código de barras.
+5. O Sistema disponibiliza a impressão da etiqueta.
+
+
+==== VENDAS ====
+
+
+CU06 – CADASTRAR E IDENTIFICAR OPERADORES DE VENDAS
+
+Fluxo Principal:
+
+1. O Administrador cadastra operador.
+2. O Sistema atualiza dados.
+3. Os Operadores são vinculados com as operações.
+4. O Sistema cria credenciais individuais (e-mail e senha) para cada usuário cadastrado.
+
+
+CU07 – CONSULTAR DADOS DE PRODUTOS
+
+Fluxo Principal:
+
+1. O Operador pesquisa produto.
+2. O Sistema exibe preço e quantidades disponíveis.
+
+Fluxo de Exceção E1:
+
+1. No passo 2, o Usuário pesquisou por um nome não presente na base de dados.
+2. O Sistema emite uma mensagem de erro.
+3. Volta ao passo 1 do Fluxo Principal.
+
+CU08 – EMITIR PEDIDO DE VENDA
+
+Fluxo Principal:
+
+1. O Operador registra itens.
+2. Finaliza pedido.
+3. O Sistema envia para a cestinha do caixa.
+
+CU09 – CLASSIFICAR TIPO DE PEDIDO
+
+Fluxo Principal:
+
+1. O Operador cria pedido.
+2. Seleciona o tipo de pedido.
+3. O Sistema registra classificação.
+
+CU10 – VALIDAR ENVIO DO PEDIDO
+
+Fluxo Principal:
+
+1. O Operador finaliza pedido.
+2. O Sistema solicita senha.
+3. O Operador insere a senha.
+4. O Sistema valida.
+5. O Pedido é enviado ao caixa.
+
+Fluxo de Exceção:
+1. No passo 4, a senha é inválida.
+2. O Sistema registra a tentativa.
+3. Após 3 tentativas consecutivas, o Sistema bloqueia o usuário e gera mensagem de bloqueio.
+4. Volta ao passo 2 do Fluxo Principal.
+
+
+==== CAIXA ====
+
+
+CU11 – ABRIR CAIXA
+
+Fluxo Principal:
+
+1. O Operador solicita abertura.
+2. O Sistema recupera saldo de troco anterior.
+3. O Operador confirma o valor.
+4. O Sistema abre caixa.
+
+Fluxo de Exceção E1:
+
+1. No passo 4, Operador tenta abrir um caixa que já está aberto.
+2. O Sistema emite uma mensagem de erro.
+3. Volta ao passo 1 do Fluxo Principal.
+
+Fluxo de Exceção E2:
+1. No passo 4, o turno anterior ainda não foi encerrado.
+2. O Sistema emite uma mensagem de erro.
+3. Volta ao passo 1 do Fluxo Principal.
+
+CU12 – EMITIR RELATÓRIO DE FECHAMENTO
+
+Fluxo Principal:
+
+1. O Operador informa período.
+2. O Sistema gera relatório.
+3. O Sistema exibe a quantidade de itens vendidos, o valor total das vendas, o saldo físico e o saldo sistêmico.
+
+CU13 – REGISTRAR MÉTODO DE PAGAMENTO
+
+Fluxo Principal:
+
+1. O Operador seleciona a forma de pagamento.
+2. O Sistema apresenta apenas as formas cadastradas.
+3. O Operador escolhe uma forma.
+4. Caso seja cartão de crédito, informa a quantidade de parcelas.
+5. O Sistema registra a opção escolhida.
+
+CU14 – EMITIR NOTA FISCAL
+
+Fluxo Principal:
+
+1. O Pagamento é confirmado.
+2. O Sistema gera a nota fiscal.
+3. O Sistema envia ao cliente.
+4. O Sistema gera a nota fiscal contendo os dados fiscais exigidos pela legislação.
+
+Fluxo de Exceção E1:
+
+1.  No passo 3, a comunicação com a API falha ou está fora do ar.
+2. O Sistema emite uma mensagem de erro.
+3. Volta ao passo 1 do Fluxo Principal.
+
+CU15 – CONFERIR PRODUTOS DO PEDIDO
+
+Fluxo Principal:
+1. O Sistema exibe a lista detalhada dos produtos.
+2. O Sistema apresenta para cada item: Código, Descrição, Quantidade e Valor unitário.
+3. O Operador realiza a conferência física dos itens.
+4. O Operador confirma a conferência no Sistema.
+5. O Sistema valida a confirmação.
+6. O Sistema desbloqueia a tela de pagamento.
+7. O Operador prossegue para o registro do pagamento.
+
+Fluxo de Exceção E1:
+1. No passo 4, o Operador não confirma a conferência.
+2. O Sistema mantém a tela de pagamento bloqueada.
+3. Volta para o passo 2 do Fluxo Principal. O Operador deve concluir a conferência antes de prosseguir.
+
+Fluxo de Exceção E2:
+1. No passo 3, o Operador identifica divergência entre os itens físicos e o pedido.
+2. O Operador interrompe o processo.
+3. O Sistema cancela a conferência.
+4. Volta para o passo 2 do Fluxo Principal.
+
+CU16 – CANCELAR VENDA
+
+Fluxo Principal:
+
+1. O Operador solicita cancelamento.
+2. O Sistema cancela a compra.
+3. O Estoque é atualizado.
+
+CU17 – REALIZAR FECHAMENTO CEGO
+
+Fluxo Principal:
+
+1. O Operador informa valor contado.
+2. O Sistema compara com saldo esperado.
+3. O Sistema calcula sobra ou falta.
+4. O Sistema exibe o resultado.
+5. O Sistema envia um alerta para o Gerente.
+
+
+==== COMPRAS ====
+
+
+CU18 – GERENCIAR AGENDA DE FORNECEDORES
+
+Fluxo Principal:
+
+1. O Comprador acessa a agenda.
+2. O Sistema exibe os fornecedores com o nome da empresa e os itens fornecidos por cada um.
+3. O Sistema destaca os mais urgentes.
+
+
+CU19 – GERAR COTAÇÃO
+
+Fluxo Principal:
+
+1. O Comprador seleciona itens.
+2. O Sistema cria a cotação.
+3. O Comprador informa o prazo de validade da cotação.
+4. O Sistema registra a cotação.
+5. A Cotação é enviada aos fornecedores por e-mail.
+
+
+CU20 – REGISTRAR NEGOCIAÇÃO
+
+Fluxo Principal:
+
+1. O Comprador recebe proposta.
+2. Atualiza preço, quantidade e prazo.
+3. O Sistema registra alterações.
+
+CU21 – GERAR PEDIDO DE COMPRA
+
+Fluxo Principal:
+
+1. O Comprador seleciona cotação.
+2. O Sistema converte em pedido.
+3. O pedido é gravado permanentemente.
+4. O Sistema bloqueia alterações no pedido.
+5. O Sistema mantém histórico das versões.
+6. O Sistema gera um relatório contendo quantidade de produtos, custos e prazo de entrega.
+
+CU22 – REGISTRAR PREVISÃO DE ENTREGA
+
+Fluxo Principal:
+
+1. O Comprador finaliza pedido.
+2. O Sistema exige prazo de entrega.
+3. O Sistema envia solicitação por e-mail.
+
+CU23 – COMPARAR NOTA FISCAL E PEDIDO
+
+Fluxo Principal:
+1. A nota fiscal é recebida.
+2. O Sistema compara com o pedido.
+3. Verifica quantidades, valores e condições.
+4. Exibe divergências.
+
+
+CU24 – ATUALIZAR PREÇO DE CUSTO
+
+Fluxo Principal:
+
+1. A compra é registrada.
+2. O Sistema calcula impostos.
+3. O Sistema atualiza custo do item.
+4. O Sistema registra a entrada dos produtos após a conferência da nota fiscal, armazenando código, nome, tipo e marca.
+
+CU25 – FORMAR E ATIVAR PREÇO DE VENDA
+
+Fluxo Principal:
+1. O Sistema exibe novo custo.
+2. O Comprador faz o Markup.
+3. O Sistema recalcula o preço.
+4. O Comprador confirma.
+5. O Sistema ativa novo preço.
