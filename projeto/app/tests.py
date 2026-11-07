@@ -1,3 +1,4 @@
 from django.test import TestCase
-
-# Create your tests here.
+from decimal import Decimal
+from .forms import TributacaoImpostosForm
+from .models import Produto, Fornecedor, Categoria

@@ -2,17 +2,20 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
-from .forms import UsuarioCadastroForm, FornecedorCadastro, ProdutoCadastro
-from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda
 from django.db.models import Sum, F, Q
 from django.utils import timezone
 from datetime import datetime
 from django.db import transaction
 
-# Obtém o modelo de usuário ativo (accounts.Usuario)
+# IMPORTAÇÃO ATUALIZADA
+from .forms import (
+    UsuarioCadastroForm, FornecedorCadastro, ProdutoCadastro,
+    TributacaoImpostosForm, FinalizarVendaForm, RelatorioVendasForm
+)
+from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda
+
 Usuario = get_user_model()
 
-# Separacao de telas por patente de usuario
 def acesso_estoque(user):
     return user.is_authenticated and (user.role == 'ESTOQUE' or user.role == 'ADMINISTRADOR')
 
@@ -101,7 +104,6 @@ def deletar_usuario_view(request, id=None):
 
 @login_required
 def dashboard_admin_view(request):
-    # Atualização do orçamento mensal via formulário POST
     if request.method == 'POST' and 'novo_orcamento' in request.POST:
         try:
             novo_orcamento = float(request.POST.get('novo_orcamento', 0))
@@ -111,14 +113,10 @@ def dashboard_admin_view(request):
             messages.error(request, 'Valor inválido para o orçamento.')
         return redirect('app:dashboard')
 
-    # Recupera o orçamento da sessão (padrão: R$ 10.000,00)
     orcamento_definido = request.session.get('orcamento_mensal', 10000.00)
-
-    # Considera produtos com estoque baixo (<= 10 unidades)
     LIMITE_ESTOQUE_BAIXO = 10
     produtos_para_comprar = Produto.objects.filter(quantidade__lte=LIMITE_ESTOQUE_BAIXO).order_by('quantidade')
 
-    # Cálculo da necessidade de compra para repor estoque até 20 unidades
     ESTOQUE_DESEJADO = 20
     total_necessidade_compra = sum(
         (ESTOQUE_DESEJADO - p.quantidade) * float(p.preco_custo or 0) 
@@ -148,7 +146,6 @@ def controle_estoque_view(request):
     else:
         produtos = Produto.objects.all().order_by('-id')
 
-    # Cálculos para os cards superiores
     total_tipos = Produto.objects.count()
     total_itens_fisicos = Produto.objects.aggregate(total=Sum('quantidade'))['total'] or 0
     valor_total_estoque = Produto.objects.aggregate(
@@ -199,6 +196,7 @@ def consultar_item_view(request, produto_id=None):
     }
     return render(request, 'estoque_item.html', context)
 
+
 @user_passes_test(acesso_estoque)
 def detalhes_item_view(request, produto_id=None):
     produto = None
@@ -221,6 +219,7 @@ def detalhes_item_view(request, produto_id=None):
         'nome_usuario': request.user.first_name or request.user.username,
     }
     return render(request, 'estoque_item.html', context)
+
 
 @user_passes_test(acesso_estoque)
 def etiquetas_view(request):
@@ -297,7 +296,6 @@ def caixa_pdv_view(request):
     if request.method == 'POST':
         acao = request.POST.get('acao')
 
-        # 1. Adicionar item lido pelo leitor
         if acao == 'adicionar':
             codigo_barras = request.POST.get('codigo_barras', '').strip()
             if codigo_barras:
@@ -313,7 +311,6 @@ def caixa_pdv_view(request):
                     if produto.quantidade > 0:
                         preco_item = float(produto.preco_custo or 0)
                         
-                        # Verifica se o produto já existe no carrinho para apenas incrementar a quantidade
                         item_existente = next((item for item in carrinho if item['produto_id'] == produto.id), None)
                         if item_existente:
                             item_existente['quantidade'] += 1
@@ -338,7 +335,6 @@ def caixa_pdv_view(request):
 
             return redirect('app:caixa')
 
-        # 2. Limpar o carrinho inteiro
         elif acao == 'limpar':
             request.session['carrinho'] = []
             request.session['ultimo_item_nome'] = '---'
@@ -346,9 +342,7 @@ def caixa_pdv_view(request):
             messages.info(request, 'Carrinho esvaziado.')
             return redirect('app:caixa')
 
-        # 3. Finalizar e dar baixa no estoque
         elif acao == 'finalizar':
-            forma_pagamento = request.POST.get('forma_pagamento')
             valor_recebido = request.POST.get('valor_recebido')
             total_compra = sum(item['subtotal'] for item in carrinho)
 
@@ -358,33 +352,19 @@ def caixa_pdv_view(request):
 
             if valor_recebido:
                 try:
-                    valor_recebido = float(valor_recebido)
-                    if valor_recebido < total_compra:
-                        messages.error(request, f'Valor recebido (R$ {valor_recebido:.2f}) é menor que o total da compra (R$ {total_compra:.2f})!')
+                    valor_recebido_float = float(valor_recebido)
+                    if valor_recebido_float < total_compra:
+                        messages.error(request, f'Valor recebido (R$ {valor_recebido_float:.2f}) é menor que o total da compra (R$ {total_compra:.2f})!')
                         return redirect('app:caixa')
                 except ValueError:
                     pass
 
             try:
-                with transaction.atomic():
-                    # Cria a venda com os campos corretos agora suportados pelo modelo
-                    venda = Venda.objects.create(
-                        vendedor=request.user if request.user.is_authenticated else None,
-                        valor_total=total_compra,
-                        forma_pagamento=forma_pagamento
-                    )
-
-                    for item in carrinho:
-                        prod = Produto.objects.get(id=item['produto_id'])
-                        ItemVenda.objects.create(
-                            venda=venda,
-                            produto=prod,
-                            quantidade=item['quantidade'],
-                            preco_unitario=item['preco']
-                        )
-                        prod.quantidade -= item['quantidade']
-                        prod.save()
-
+                # INSTANCIA O FORMULÁRIO E CHAMA A LÓGICA DE VENDA
+                form = FinalizarVendaForm(request.POST)
+                if form.is_valid():
+                    venda = form.efetivar_venda(request, carrinho, total_compra)
+                    
                     request.session['carrinho'] = []
                     request.session['ultimo_item_nome'] = '---'
                     request.session['ultimo_item_preco'] = 0.0
@@ -394,7 +374,6 @@ def caixa_pdv_view(request):
                         messages.success(request, f'Venda #{venda.id} finalizada com sucesso! Troco: R$ {troco:.2f}')
                     else:
                         messages.success(request, f'Venda #{venda.id} finalizada com sucesso!')
-
             except Exception as e:
                 messages.error(request, f'Erro ao registrar a venda: {str(e)}')
 
@@ -419,8 +398,6 @@ def relatorio_vendas_view(request):
         return redirect('app:relatorio')
 
     hoje = timezone.now().date()
-    
-    # 1. Histórico de Vendas do dia atual
     vendas_hoje = Venda.objects.filter(data_venda__date=hoje).order_by('-data_venda') if hasattr(Venda, 'data_venda') else Venda.objects.all().order_by('-id')
 
     total_dinheiro = 0.0
@@ -436,42 +413,18 @@ def relatorio_vendas_view(request):
 
     total_geral = total_dinheiro + total_cartao_pix
 
-    # 2. Lógica de Comparação entre dois dias
-    data_1_str = request.GET.get('data_1', '')
-    data_2_str = request.GET.get('data_2', '')
-    total_dia_1 = 0.0
-    total_dia_2 = 0.0
-    diferenca_valor = 0.0
-    percentual_crescimento = 0.0
-
-    if data_1_str and data_2_str:
-        try:
-            d1 = datetime.strptime(data_1_str, '%Y-%m-%d').date()
-            d2 = datetime.strptime(data_2_str, '%Y-%m-%d').date()
-
-            # Soma das vendas do Dia 1
-            vendas_d1 = Venda.objects.filter(data_venda__date=d1) if hasattr(Venda, 'data_venda') else []
-            total_dia_1 = sum(float(v.valor_total or 0) for v in vendas_d1)
-
-            # Soma das vendas do Dia 2
-            vendas_d2 = Venda.objects.filter(data_venda__date=d2) if hasattr(Venda, 'data_venda') else []
-            total_dia_2 = sum(float(v.valor_total or 0) for v in vendas_d2)
-
-            diferenca_valor = total_dia_2 - total_dia_1
-            
-            if total_dia_1 > 0:
-                percentual_crescimento = (diferenca_valor / total_dia_1) * 100
-            elif total_dia_2 > 0:
-                percentual_crescimento = 100.0
-        except ValueError:
-            pass
+    # CHAMA A LÓGICA DO RELATÓRIO VIA FORM
+    form_relatorio = RelatorioVendasForm(request.GET)
+    if form_relatorio.is_valid():
+        data_1_str, data_2_str, total_dia_1, total_dia_2, diferenca_valor, percentual_crescimento = form_relatorio.processar_relatorio()
+    else:
+        data_1_str, data_2_str, total_dia_1, total_dia_2, diferenca_valor, percentual_crescimento = ('', '', 0.0, 0.0, 0.0, 0.0)
 
     context = {
         'vendas': vendas_hoje,
         'total_dinheiro': total_dinheiro,
         'total_cartao_pix': total_cartao_pix,
         'total_geral': total_geral,
-        # Variáveis de comparação
         'data_1': data_1_str,
         'data_2': data_2_str,
         'total_dia_1': total_dia_1,
@@ -486,7 +439,6 @@ def relatorio_vendas_view(request):
 @user_passes_test(acesso_compras)
 def painel_compras_view(request):
     if request.method == 'POST':
-        # 1. Cadastro de Novo Produto/Compra
         if 'nome_produto' in request.POST:
             dados_produto = {
                 'nome': request.POST.get('nome_produto'),
@@ -506,7 +458,6 @@ def painel_compras_view(request):
                         messages.error(request, f"Erro no campo '{field}': {error}")
             return redirect('app:painel')
 
-        # 2. Cadastro de Fornecedor
         elif 'nome' in request.POST:
             form_fornecedor = FornecedorCadastro(request.POST)
             if form_fornecedor.is_valid():
@@ -518,54 +469,26 @@ def painel_compras_view(request):
                         messages.error(request, f"Erro no campo '{field}': {error}")
             return redirect('app:painel')
 
-        # 3. Modificação de Preço com Tributação Brasileira (Markup + Impostos)
         elif 'produto_id' in request.POST and 'calc_markup' in request.POST:
             try:
                 produto_id = request.POST.get('produto_id')
                 produto = get_object_or_404(Produto, id=produto_id)
                 
-                custo = float(request.POST.get('calc_custo', 0) or 0)
-                frete = float(request.POST.get('calc_frete', 0) or 0)
-                ipi = float(request.POST.get('calc_ipi', 0) or 0)
-                icms = float(request.POST.get('calc_icms', 0) or 0)
-                pis = float(request.POST.get('calc_pis', 0) or 0)
-                cofins = float(request.POST.get('calc_cofins', 0) or 0)
-                iss = float(request.POST.get('calc_iss', 0) or 0)
-                markup = float(request.POST.get('calc_markup', 0) or 0)
-                
-                # Legislação Brasileira: Custo Efetivo + Tributação "por dentro"
-                custo_efetivo = custo + frete + (custo * (ipi / 100))
-                total_impostos = (icms + pis + cofins + iss) / 100
-                if total_impostos >= 1:
-                    total_impostos = 0.99
-                
-                preco_base_tributado = custo_efetivo / (1 - total_impostos)
-                preco_final = preco_base_tributado * (1 + (markup / 100))
-                
-                # Salva os novos valores no banco de dados
-                produto.preco_custo = custo
-                produto.preco_venda = round(preco_final, 2)
-                produto.save()
-                
-                messages.success(request, f'Preço do produto "{produto.nome}" atualizado com sucesso para R$ {produto.preco_venda:.2f}!')
+                # CHAMA A LÓGICA DE TRIBUTAÇÃO DO FORM
+                form = TributacaoImpostosForm(request.POST)
+                if form.is_valid():
+                    produto = form.processar_calculo(produto)
+                    messages.success(request, f'Preço do produto "{produto.nome}" atualizado com sucesso para R$ {produto.preco_venda:.2f}!')
             except Exception as e:
                 messages.error(request, f'Erro ao atualizar preço: {str(e)}')
             return redirect('app:painel')
 
     lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
-    lista_de_produtos = Produto.objects.all().order_by('nome') # <-- Necessário para o select do modal
+    lista_de_produtos = Produto.objects.all().order_by('nome')
 
     context = {
         'fornecedores': lista_de_fornecedores,
         'produtos': lista_de_produtos,
-        'nome_usuario': request.user.first_name or request.user.username,
-    }
-    return render(request, 'compras.html', context)
-
-    lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
-
-    context = {
-        'fornecedores': lista_de_fornecedores,
         'nome_usuario': request.user.first_name or request.user.username,
     }
     return render(request, 'compras.html', context)
