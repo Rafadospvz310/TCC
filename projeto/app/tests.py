@@ -1,7 +1,11 @@
+from datetime import timedelta
+
 from django.test import TestCase
 from decimal import Decimal
+from django.utils import timezone
 from .forms import TributacaoImpostosForm
 from .models import Produto, Fornecedor, Categoria
+from .models import Venda
 
 class TributacaoImpostosFormTest(TestCase):
 
@@ -11,7 +15,6 @@ class TributacaoImpostosFormTest(TestCase):
             CNPJ="12345678000199"
         )
         
-        # Produto inicial antes de aplicar a nova tributação
         self.produto = Produto.objects.create(
             nome="Parafuso Sextavado",
             codigo_barras="7891234567890",
@@ -42,14 +45,11 @@ class TributacaoImpostosFormTest(TestCase):
         form = TributacaoImpostosForm(data=payload)
         self.assertTrue(form.is_valid())
 
-        # Executa o processamento transferido para o form
         produto_atualizado = form.processar_calculo(self.produto)
 
-        # Validações dos valores retornados pela função
         self.assertEqual(float(produto_atualizado.preco_custo), 100.0)
         self.assertEqual(float(produto_atualizado.preco_venda), 197.94)
 
-        # Recarrega o produto do banco para confirmar a gravação física (save)
         self.produto.refresh_from_db()
         self.assertEqual(float(self.produto.preco_venda), 197.94)
 
@@ -62,7 +62,7 @@ class TributacaoImpostosFormTest(TestCase):
             'produto_id': self.produto.id,
             'calc_custo': 100.0,
             'calc_icms': 50.0,
-            'calc_pis': 50.0, # Soma 100% -> O form deve travar em 99%
+            'calc_pis': 50.0,
             'calc_markup': 0.0
         }
 
@@ -70,7 +70,6 @@ class TributacaoImpostosFormTest(TestCase):
         self.assertTrue(form.is_valid())
 
         produto_atualizado = form.processar_calculo(self.produto)
-        # Custo Efetivo: 100 / (1 - 0.99) = 10000.0
         self.assertEqual(float(produto_atualizado.preco_venda), 10000.0)
 
     def test_processamento_com_campos_opcionais_vazios(self):
@@ -85,3 +84,66 @@ class TributacaoImpostosFormTest(TestCase):
         produto_atualizado = form.processar_calculo(self.produto)
         self.assertEqual(float(produto_atualizado.preco_custo), 0.0)
         self.assertEqual(float(produto_atualizado.preco_venda), 0.0)
+
+
+class RelatorioVendasCaixaTest(TestCase):
+    """
+    Testes de integração para o Relatório de Vendas (Fechamento de Caixa).
+    """
+
+    def setUp(self):
+        self.hoje = timezone.now().date()
+
+        self.venda_dinheiro = Venda.objects.create(
+            valor_total=Decimal('150.00'),
+            forma_pagamento='Dinheiro'
+        )
+        # Forçando a data para garantir precisão no teste
+        self.venda_dinheiro.data_venda = timezone.now()
+        self.venda_dinheiro.save()
+
+        self.venda_pix = Venda.objects.create(
+            valor_total=Decimal('350.00'),
+            forma_pagamento='PIX'
+        )
+        self.venda_pix.data_venda = timezone.now()
+        self.venda_pix.save()
+
+        self.venda_ontem = Venda.objects.create(
+            valor_total=Decimal('500.00'),
+            forma_pagamento='Dinheiro'
+        )
+
+        self.venda_ontem.data_venda = timezone.now() - timedelta(days=1)
+        self.venda_ontem.save()
+
+    def test_deve_retornar_apenas_as_vendas_realizadas_no_dia_atual(self):
+        vendas_hoje = Venda.objects.filter(data_venda__date=self.hoje)
+
+        self.assertEqual(vendas_hoje.count(), 2)
+        
+
+        self.assertIn(self.venda_dinheiro, vendas_hoje)
+        self.assertIn(self.venda_pix, vendas_hoje)
+        
+        self.assertNotIn(self.venda_ontem, vendas_hoje)
+
+    def test_deve_separar_e_somar_totais_por_forma_de_pagamento(self):
+        vendas_hoje = Venda.objects.filter(data_venda__date=self.hoje)
+        
+        total_dinheiro = 0.0
+        total_cartao_pix = 0.0
+
+        for venda in vendas_hoje:
+            valor = float(venda.valor_total or 0)
+            forma = str(getattr(venda, 'forma_pagamento', '') or '').lower()
+            if 'dinheiro' in forma:
+                total_dinheiro += valor
+            else:
+                total_cartao_pix += valor
+
+        self.assertEqual(total_dinheiro, 150.00) 
+        self.assertEqual(total_cartao_pix, 350.00)
+        self.assertEqual(total_dinheiro + total_cartao_pix, 500.00)
+
+
