@@ -30,8 +30,6 @@ class Produto(models.Model):
     def __str__(self):
         return self.nome
 
-
-# Se o seu forms.py importa estes outros modelos, declare-os aqui para evitar novos erros de importação:
 class Categoria(models.Model):
     nome = models.CharField(max_length=100)
 
@@ -49,9 +47,8 @@ class Cliente(models.Model):
         db_table = 'clientes'
 
 
-from django.conf import settings  # Certifique-se de que esta importação está no topo do models.py
+from django.conf import settings
 
-# ... (outros modelos)
 
 class Venda(models.Model):
     data_venda = models.DateTimeField(auto_now_add=True)
