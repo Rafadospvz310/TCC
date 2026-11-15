@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from .forms import UsuarioCadastroForm, FornecedorCadastro, ProdutoCadastro
-from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda
+from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda, AgendamentoPedido
 from django.db.models import Sum, F, Q
 from django.utils import timezone
 from datetime import datetime
@@ -518,7 +518,7 @@ def painel_compras_view(request):
                         messages.error(request, f"Erro no campo '{field}': {error}")
             return redirect('app:painel')
 
-        # 3. Modificação de Preço com Tributação Brasileira (Markup + Impostos)
+        # 3. Modificação de Preço com Tributação Brasileira
         elif 'produto_id' in request.POST and 'calc_markup' in request.POST:
             try:
                 produto_id = request.POST.get('produto_id')
@@ -533,7 +533,6 @@ def painel_compras_view(request):
                 iss = float(request.POST.get('calc_iss', 0) or 0)
                 markup = float(request.POST.get('calc_markup', 0) or 0)
                 
-                # Legislação Brasileira: Custo Efetivo + Tributação "por dentro"
                 custo_efetivo = custo + frete + (custo * (ipi / 100))
                 total_impostos = (icms + pis + cofins + iss) / 100
                 if total_impostos >= 1:
@@ -542,7 +541,6 @@ def painel_compras_view(request):
                 preco_base_tributado = custo_efetivo / (1 - total_impostos)
                 preco_final = preco_base_tributado * (1 + (markup / 100))
                 
-                # Salva os novos valores no banco de dados
                 produto.preco_custo = custo
                 produto.preco_venda = round(preco_final, 2)
                 produto.save()
@@ -552,12 +550,37 @@ def painel_compras_view(request):
                 messages.error(request, f'Erro ao atualizar preço: {str(e)}')
             return redirect('app:painel')
 
-    lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
-    lista_de_produtos = Produto.objects.all().order_by('nome') # <-- Necessário para o select do modal
+        # 4. Salvar Agendamento de Pedido com Fornecedor
+        elif 'data_agendamento' in request.POST:
+            try:
+                data_str = request.POST.get('data_agendamento') # Formato DD/MM/YYYY
+                fornecedor_id = request.POST.get('fornecedor_id')
+                horario_str = request.POST.get('horario')
+                observacoes = request.POST.get('observacoes', '').strip()
 
+                data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
+                fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id)
+
+                AgendamentoPedido.objects.create(
+                    fornecedor=fornecedor,
+                    data_agendamento=data_formatada,
+                    horario=horario_str,
+                    observacoes=observacoes
+                )
+                messages.success(request, f'Pedido com "{fornecedor.nome}" agendado para {data_str} às {horario_str}!')
+            except Exception as e:
+                messages.error(request, f'Erro ao agendar pedido: {str(e)}')
+            return redirect('app:painel')
+
+    lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
+    lista_de_produtos = Produto.objects.all().order_by('nome')
+    agendamentos = AgendamentoPedido.objects.select_related('fornecedor').all()
+
+    # O context precisa incluir 'fornecedores' para preencher tanto a tabela quanto os modais!
     context = {
         'fornecedores': lista_de_fornecedores,
         'produtos': lista_de_produtos,
+        'agendamentos': agendamentos,
         'nome_usuario': request.user.first_name or request.user.username,
     }
     return render(request, 'compras.html', context)

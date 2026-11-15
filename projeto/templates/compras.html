@@ -56,6 +56,17 @@
                         <div class="calendar-day-name">Dom</div><div class="calendar-day-name">Seg</div><div class="calendar-day-name">Ter</div><div class="calendar-day-name">Qua</div><div class="calendar-day-name">Qui</div><div class="calendar-day-name">Sex</div><div class="calendar-day-name">Sáb</div>
                     </div>
                     <div class="calendar-days" id="calendarDays"></div>
+                    <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+    <h3 style="font-size: 1rem; color: var(--primary-blue); margin-bottom: 10px;">Próximos Pedidos Agendados</h3>
+    {% for ag in agendamentos %}
+        <div style="background: #f8fafc; border-left: 4px solid var(--secondary-blue); padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.9rem;">
+            <strong>{{ ag.data_agendamento|date:"d/m/Y" }} às {{ ag.horario|time:"H:i" }}</strong> — {{ ag.fornecedor.nome }}
+            {% if ag.observacoes %}<br><span style="color: var(--text-light);">{{ ag.observacoes }}</span>{% endif %}
+        </div>
+    {% empty %}
+        <p style="color: var(--text-light); font-size: 0.9rem;">Nenhum pedido agendado no momento.</p>
+    {% endfor %}
+</div>
                 </div>
             </section>
             <section class="card">
@@ -138,7 +149,7 @@
                         <input type="text" name="nome_produto" required>
                     </div>
                     <div class="form-group">
-                        <label>Fornecedor</label>
+                        <label>Selecione o Fornecedor</label>
                         <select name="fornecedor_id" required>
                             <option value="">Selecione...</option>
                             {% for f in fornecedores %}
@@ -234,23 +245,37 @@
     </div>
 </div>
     <div id="modalAgendamento" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Agendar Pedido com Fornecedor</h2>
-                <button class="close-btn" onclick="fecharModal('modalAgendamento')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form action="{% url 'app:painel' %}" method="POST">
-                    {% csrf_token %}
-                    <div class="form-group"><label>Data Selecionada</label><input type="text" id="dataSelecionadaAgendamento" name="data_agendamento" readonly style="background-color: var(--bg-color); font-weight: bold;"></div>
-                    <div class="form-group"><label>Selecione o Fornecedor</label><select name="fornecedor_id" required><option value="">Selecione...</option></select></div>
-                    <div class="form-group"><label>Horário do Encontro/Ligação</label><input type="time" name="horario" required></div>
-                    <div class="form-group"><label>Observações (Opcional)</label><input type="text" name="observacoes"></div>
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;"><button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalAgendamento')">Cancelar</button><button type="submit" class="btn btn-primary">Salvar Agendamento</button></div>
-                </form>
-            </div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Agendar Pedido com Fornecedor</h2>
+            <button class="close-btn" onclick="fecharModal('modalAgendamento')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form action="{% url 'app:painel' %}" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Data Selecionada</label>
+                    <input type="text" id="dataSelecionadaAgendamento" name="data_agendamento" readonly style="background-color: var(--bg-color); font-weight: bold;">
+                </div>
+                <div class="form-group">
+                    <label>Selecione o Fornecedor</label>
+                    <select name="fornecedor_id" required>
+                        <option value="">Selecione...</option>
+                        {% for f in fornecedores %}
+                            <option value="{{ f.id }}">{{ f.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label>Horário do Encontro/Ligação</label><input type="time" name="horario" required></div>
+                <div class="form-group"><label>Observações (Opcional)</label><input type="text" name="observacoes"></div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn" style="background-color: #e2e8f0;" onclick="fecharModal('modalAgendamento')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Agendamento</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
     <script>
         function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -330,6 +355,61 @@
                 }
             });
         });
+        // Lista de agendamentos vindos do backend
+const agendamentosSalvos = [
+    {% for ag in agendamentos %}
+        {
+            data: "{{ ag.data_agendamento|date:'Y-m-d' }}",
+            fornecedor: "{{ ag.fornecedor.nome|escapejs }}",
+            horario: "{{ ag.horario|time:'H:i' }}"
+        },
+    {% endfor %}
+];
+
+function renderCalendar() {
+    calendarDays.innerHTML = '';
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    monthYear.innerText = `${monthNames[month]} ${year}`;
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDayIndex; i++) { 
+        const emptyDiv = document.createElement('div'); 
+        emptyDiv.classList.add('calendar-day', 'empty'); 
+        calendarDays.appendChild(emptyDiv); 
+    }
+
+    const today = new Date();
+    for (let i = 1; i <= lastDay; i++) {
+        const dayDiv = document.createElement('div'); 
+        dayDiv.classList.add('calendar-day');
+
+        if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) { 
+            dayDiv.classList.add('today'); 
+        }
+
+        // Verifica se há agendamento neste dia (YYYY-MM-DD)
+        const mesStr = (month + 1).toString().padStart(2, '0');
+        const diaStr = i.toString().padStart(2, '0');
+        const dataAtualStr = `${year}-${mesStr}-${diaStr}`;
+        const eventosDoDia = agendamentosSalvos.filter(ag => ag.data === dataAtualStr);
+
+        if (eventosDoDia.length > 0) {
+            dayDiv.style.backgroundColor = '#dbeafe';
+            dayDiv.style.borderColor = '#2563eb';
+            dayDiv.title = eventosDoDia.map(e => `${e.horario} - ${e.fornecedor}`).join('\n');
+            dayDiv.innerHTML = `<span class="calendar-date" style="font-weight: bold; color: #1d4ed8;">${i}</span>
+                                <span style="display: block; font-size: 0.7rem; color: #1e40af; margin-top: 2px;">${eventosDoDia.length} pedido(s)</span>`;
+        } else {
+            dayDiv.innerHTML = `<span class="calendar-date">${i}</span>`;
+        }
+
+        dayDiv.onclick = function() { abrirAgendamento(i); };
+        calendarDays.appendChild(dayDiv);
+    }
+}
     </script>
 </body>
 </html>

@@ -67,7 +67,22 @@ class ItemVenda(models.Model):
     venda = models.ForeignKey(Venda, on_delete=models.CASCADE, related_name='itens')
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     quantidade = models.IntegerField(default=1)
-    preco_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Adicionado para guardar o preço no momento da venda
+    preco_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     class Meta:
         db_table = 'itens_venda'
+        # REMOVA a linha de ordering daqui!
+
+
+class AgendamentoPedido(models.Model):
+    fornecedor = models.ForeignKey(Fornecedor, on_delete=models.CASCADE, related_name='agendamentos')
+    data_agendamento = models.DateField()
+    horario = models.TimeField()
+    observacoes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'agendamentos_pedidos'
+        ordering = ['data_agendamento', 'horario']  # O ordering fica correto aqui na Agenda!
+
+    def __str__(self):
+        return f"{self.fornecedor.nome} - {self.data_agendamento} às {self.horario}"
