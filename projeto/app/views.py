@@ -2,11 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
-<<<<<<< HEAD
+
 from .forms import UsuarioCadastroForm, FornecedorCadastro, ProdutoCadastro
 from .models import Fornecedor, Produto, Categoria, Cliente, Venda, ItemVenda, AgendamentoPedido
-=======
->>>>>>> 1caf8bf80b084b54ec138dad63eb333721d88e2a
+
+
 from django.db.models import Sum, F, Q
 from django.utils import timezone
 from datetime import datetime
@@ -474,16 +474,16 @@ def painel_compras_view(request):
                         messages.error(request, f"Erro no campo '{field}': {error}")
             return redirect('app:painel')
 
-<<<<<<< HEAD
+
         # 3. Modificação de Preço com Tributação Brasileira
-=======
->>>>>>> 1caf8bf80b084b54ec138dad63eb333721d88e2a
+
+
         elif 'produto_id' in request.POST and 'calc_markup' in request.POST:
             try:
                 produto_id = request.POST.get('produto_id')
                 produto = get_object_or_404(Produto, id=produto_id)
                 
-<<<<<<< HEAD
+
                 custo = float(request.POST.get('calc_custo', 0) or 0)
                 frete = float(request.POST.get('calc_frete', 0) or 0)
                 ipi = float(request.POST.get('calc_ipi', 0) or 0)
@@ -506,18 +506,18 @@ def painel_compras_view(request):
                 produto.save()
                 
                 messages.success(request, f'Preço do produto "{produto.nome}" atualizado com sucesso para R$ {produto.preco_venda:.2f}!')
-=======
+
                 # CHAMA A LÓGICA DE TRIBUTAÇÃO DO FORM
                 form = TributacaoImpostosForm(request.POST)
                 if form.is_valid():
                     produto = form.processar_calculo(produto)
                     messages.success(request, f'Preço do produto "{produto.nome}" atualizado com sucesso para R$ {produto.preco_venda:.2f}!')
->>>>>>> 1caf8bf80b084b54ec138dad63eb333721d88e2a
+
             except Exception as e:
                 messages.error(request, f'Erro ao atualizar preço: {str(e)}')
             return redirect('app:painel')
 
-<<<<<<< HEAD
+
         # 4. Salvar Agendamento de Pedido com Fornecedor
         elif 'data_agendamento' in request.POST:
             try:
@@ -525,10 +525,10 @@ def painel_compras_view(request):
                 fornecedor_id = request.POST.get('fornecedor_id')
                 horario_str = request.POST.get('horario')
                 observacoes = request.POST.get('observacoes', '').strip()
-=======
-    lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
-    lista_de_produtos = Produto.objects.all().order_by('nome')
->>>>>>> 1caf8bf80b084b54ec138dad63eb333721d88e2a
+
+                lista_de_fornecedores = Fornecedor.objects.all().order_by('nome')
+                lista_de_produtos = Produto.objects.all().order_by('nome')
+
 
                 data_formatada = datetime.strptime(data_str, '%d/%m/%Y').date()
                 fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id)
